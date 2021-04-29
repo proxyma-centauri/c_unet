@@ -7,7 +7,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 
-class V_group(object):
+class V_group2(object):
     def __init__(self):
         self.group_dim = 4
         self.cayleytable = self.get_cayleytable()
