@@ -6,6 +6,7 @@ decompressed
 ISBI2012
 everything
 npys
+test_scripts
 
 *.tar
 *.png
