@@ -5,6 +5,7 @@ addresses
 decompressed
 ISBI2012
 everything
+npys
 
 *.tar
 *.png
