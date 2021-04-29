@@ -11,8 +11,8 @@ import tensorflow as tf
 class Layers(object):
     def __init__(self, group):
         if group == "V":
-            from V_group import V_group
-            self.group = V_group()
+            from V_group2 import V_group2
+            self.group = V_group2()
             self.group_dim = self.group.group_dim
         elif group == "S4":
             from S4_group import S4_group
@@ -32,8 +32,8 @@ class Layers(object):
 
 
     def get_kernel(self, name, shape, factor=2.0, trainable=True):
-        init = tf.keras.initializers.VarianceScaling(scale=factor)
-        # init = tf.keras.initializers.Constant(value=factor) # For testing purposes
+        # init = tf.keras.initializers.VarianceScaling(scale=factor)
+        init = tf.keras.initializers.Constant(value=factor) # For testing purposes
         return tf.Variable(initial_value=init(shape=shape), name=name, trainable=trainable)
 
 
@@ -67,9 +67,7 @@ class Layers(object):
             y = tf.keras.layers.BatchNormalization(beta_initializer=beta_init)(y, training=is_training)
         else:
             bias = tf.Variable(initial_value=beta_init(shape=[n_out]), name="bias")
-            print(n_out)
-            print(y)
-            y = tf.nn.bias_add(y, bias)
+            y = tf.math.add(y, bias)
         return tf.transpose(a=fnc(y), perm=[0,1,2,3,5,4])
 
 
@@ -130,7 +128,7 @@ class Layers(object):
         yN = tf.nn.conv3d(xN, WN, strides, padding)
         ysh = yN.get_shape().as_list()
         y = tf.reshape(yN, [batch_size, ysh[1], ysh[2], ysh[3], n_out, self.group_dim])
-        return y
+        return (y, WN)
 
 
     def Gres_block(self, x, kernel_size, n_out, is_training, use_bn=True,
