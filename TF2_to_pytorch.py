@@ -16,7 +16,7 @@ recompute_x = False
 compare = True
 
 # Group
-group = "V"
+group = "S4"
 
 # Inputs
 kernel_size = 3
@@ -24,7 +24,7 @@ n_in = 1
 n_out = 1
 ds = 0
 is_training = True
-use_bn = True # Turns batch normalization on or off
+use_bn = False # Turns batch normalization on or off
 
 
 if PYTORCH:
@@ -76,14 +76,14 @@ if TF2:
     layers_v2 = Layers_v2(group)
     group_dim_v2 = layers_v2.group_dim
 
-    x_TF2 = layers_v2.conv(x, kernel_size, n_out)
-    x_TF2_2 = layers_v2.conv(x2, kernel_size, n_out)
+    x_TF2 = layers_v2.conv_block(x, kernel_size, n_out, is_training, use_bn=use_bn)
+    x_TF2_2 = layers_v2.conv_block(x_TF2, kernel_size, n_out, is_training, use_bn=use_bn)
     
     x = tf.expand_dims(x, -1)
     x2 = tf.expand_dims(x2, -1)
     
-    Gx_TF2, WN_TF2 = layers_v2.Gconv(x, kernel_size, n_out, is_training, drop_sigma=ds)
-    Gx_TF2_2,_ = layers_v2.Gconv(x2, kernel_size, n_out, is_training, drop_sigma=ds)
+    Gx_TF2 = layers_v2.Gconv_block(x, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
+    Gx_TF2_2 = layers_v2.Gconv_block(Gx_TF2, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
 
     print("\n ------After transformations TF2----------")
     print(f"conv : {x_TF2.shape}")
@@ -105,14 +105,14 @@ if PYTORCH:
     layers_p = PLayers(group)
     group_dim_p = layers_p.group_dim
 
-    x_P = layers_p.conv(x_p, kernel_size, n_out, is_training)
-    x_P_2 = layers_p.conv(x2_p, kernel_size, n_out, is_training)
+    x_P = layers_p.conv_block(x_p, kernel_size, n_out, is_training, use_bn=use_bn)
+    x_P_2 = layers_p.conv_block(x_P, kernel_size, n_out, is_training, use_bn=use_bn)
 
-    x_p = x_p.unsqueeze(-1)
-    x2_p = x_p.unsqueeze(-1)
+    x_p = x_p.unsqueeze(2)
+    x2_p = x2_p.unsqueeze(2)
 
-    Gx_P, WN_P = layers_p.Gconv(x_p, kernel_size, n_out, is_training, drop_sigma=ds) # drop_sigma=ds, use_bn=use_bn
-    Gx_P_2, _ = layers_p.Gconv(x2_p, kernel_size, n_out, is_training, drop_sigma=ds)
+    Gx_P = layers_p.Gconv_block(x_p, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn) # drop_sigma=ds, use_bn=use_bn
+    Gx_P_2 = layers_p.Gconv_block(Gx_P, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
 
     print("\n ------After transformations Pytorch----------")
     print(f"conv : {x_P.shape}")
@@ -136,8 +136,8 @@ if compare:
     # Extracting what can be compared
     to_compare_P = convP[0,0,:,:,:]
     to_compare_TF2 = convTF2[0,:,:,:,0]
-    to_compare_gP = gconvP[0,0,:,:,:,1]
-    to_compare_gTF2 = gconvTF2[0,:,:,:,0,1]
+    to_compare_gP = gconvP[0,0,0,:,:,:]
+    to_compare_gTF2 = gconvTF2[0,:,:,:,0,0]
 
     rtol = 1e-2
     atol = 1e-2
@@ -152,51 +152,22 @@ if compare:
     print(f"Pour les G-conv {gbool_conv}")
     print(f"Pour les conv {bool_conv}")
 
-    fig=plt.figure(figsize=(8, 8))
-    for i in range(2):
-        fig.add_subplot((i+1), 4, 1+(i*4))
-        plt.imshow(to_compare_gP[i,:,:])
+    if True:
+        fig=plt.figure(figsize=(8, 8))
+        for i in range(2):
+            fig.add_subplot((i+1), 4, 1+(i*4))
+            plt.imshow(to_compare_P[i,:,:])
 
-        fig.add_subplot((i+1), 4, 2+(i*4))
-        plt.imshow(to_compare_gTF2[i,:,:])
+            fig.add_subplot((i+1), 4, 2+(i*4))
+            plt.imshow(to_compare_gP[i,:,:])
 
-        fig.add_subplot((i+1), 4, 3+(i*4))
-        plt.imshow(gbool_map[i,:,:])
+            fig.add_subplot((i+1), 4, 3+(i*4))
+            plt.imshow(gbool_map[i,:,:])
 
-        fig.add_subplot((i+1), 4, 4+(i*4))
-        plt.imshow(x[0,i,:,:,0])
-    plt.show()
+            fig.add_subplot((i+1), 4, 4+(i*4))
+            plt.imshow(x[0,i,:,:,0])
+        plt.show()
     
-# TEST WN
-rtol = 1e-3
-atol = 1e-3
-
-print("\nTESTS:")
-
-extract_P = tf.convert_to_tensor(WN_P[1,0,:,:,:].detach().numpy())
-extract_TF2 = WN_TF2[:,:,:,0,1]
-
-WN_map = tf.experimental.numpy.isclose(extract_P, extract_TF2, rtol=rtol, atol=atol)
-WN_bool = tf.reduce_all(WN_map)
-print(f"Pour les WN {WN_bool}")
-
-fig=plt.figure(figsize=(8, 8))
-for i in range(2):
-    fig.add_subplot((i+1), 4, 1+(i*4))
-    plt.imshow(extract_P[i,:,:])
-
-    fig.add_subplot((i+1), 4, 2+(i*4))
-    plt.imshow(extract_TF2[i,:,:])
-
-    fig.add_subplot((i+1), 4, 3+(i*4))
-    plt.imshow(WN_map[i,:,:])
-
-# plt.show()
-
-# print(extract_P[0,:,:])
-# print(extract_TF2[0,:,:])
-
-
 if False:
     
     ## Pour PYTORCH
