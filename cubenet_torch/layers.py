@@ -75,21 +75,23 @@ class Layers(object):
             padding="same", fnc=torch.nn.functional.relu, name="Gconv_block", drop_sigma=0.1):
         """Convolution with batch normalization/bias and nonlinearity"""
         y = self.Gconv(x, kernel_size, n_out, is_training, strides=strides, padding=padding, drop_sigma=drop_sigma)
-        y = y.permute([0,1,2,3,5,4]) # needs to be recheked
+        y = y.permute([0,2,1,3,4,5])
         ysh = y.shape
         if use_bn:
-            y = fnc(torch.nn.functional.batch_norm(y, torch.zeros(n_out), torch.ones(n_out)))
+            y = torch.reshape(y, [ysh[0], n_out*self.group_dim, ysh[3], ysh[4], ysh[5]])
+            BatchNormalization = torch.nn.BatchNorm3d(n_out*self.group_dim)
+            y = fnc(torch.reshape(BatchNormalization(y), ysh))
         else:
             bias = torch.nn.init.constant_(torch.empty(list(y.shape)), 0.01) 
             y = fnc(torch.add(y, bias))
-        return y.permute([0,1,2,3,5,4])
+        return y.permute([0,2,1,3,4,5])
 
 
     def Gconv(self, x, kernel_size, n_out, is_training, strides=1, padding="same", drop_sigma=0.1):
         """Perform a discretized convolution on SO(3)
 
         Args:
-            x: [batch_size, height, width, n_in, group_dim/1]
+            x: [batch_size, n_in, group_dim|1, height, width, depth]
             kernel_size: int for the spatial size of the kernel
             n_out: int for number of output channels
             strides: int for spatial stride length
@@ -102,32 +104,23 @@ class Layers(object):
         batch_size = xsh[0]
         n_in = xsh[1]
 
-        # print(f"\n\nxsh : {xsh}")
         # W is the base filter. We rotate it 4 times for a p4 convolution over
         # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
         # one dimension in the channels.
-        W = self.get_kernel([n_in* xsh[5]* n_out, kernel_size, kernel_size, kernel_size])
-        # print(f"W : {W.shape}")
-        
+        W = self.get_kernel([n_in* xsh[2]* n_out, kernel_size, kernel_size, kernel_size])
         WN = self.group.get_Grotations(W)
-        # print(f"WN : {WN[0].shape}")
-
-        WN = torch.stack(WN, -1)
-        # print(f"WN stacked: {WN.shape}")
+        WN = torch.stack(WN, 0)
 
         # Reshape and rotate the io filters 4 times. Each input-output pair is
         # rotated and stacked into a much bigger kernel
-        # print(f"x: {x.shape}")
-        xN = torch.reshape(x, [batch_size, n_in*xsh[5], xsh[2], xsh[3], xsh[4]])
-        # print(f"xN: {xN.shape}")
+        xN = torch.reshape(x, [batch_size, n_in*xsh[2], xsh[3], xsh[4], xsh[5]])
 
-        if xsh[5] == 1:
+        if xsh[2] == 1:
             # A convolution on R^2 is just standard convolution with 3 extra 
             # output channels for each rotation of the filters
             WN = torch.reshape(WN, [-1, n_in, kernel_size, kernel_size, kernel_size])
-            # print(f"WN stacked, if: {WN.shape}")
 
-        elif xsh[5] == self.group_dim:
+        elif xsh[2] == self.group_dim:
             # A convolution on p4 is different to convolution on R^2. For each
             # dimension of the group output, we need to both rotate the filters
             # and circularly shift them in the input-group dimension. In a
@@ -135,17 +128,14 @@ class Layers(object):
             WN = torch.reshape(WN, [n_in, kernel_size, kernel_size, kernel_size, self.group_dim, n_out, self.group_dim])
             # [kernel_size, kernel_size, kernel_size, n_in, 4, n_out, 4]
             # Shift over axis 4
-            # print(f"WN stacked, before permut: {WN.shape}")
 
             WN_shifted = self.group.G_permutation(WN)
             WN = torch.stack(WN_shifted, -1)
-            # print(f"WN stacked, after permut: {WN.shape}")
 
             # Shift over axis 6
             # Stack the shifted tensors and reshape to 4D kernel
             WN = torch.reshape(WN, [n_out*self.group_dim, n_in*self.group_dim, kernel_size, kernel_size, kernel_size])
             # [kernel_size, kernel_size, kernel_size, xsh[4]*self.group_dim, n_out*self.group_dim]
-            # print(f"WN final: {WN.shape}")
 
         # Convolve
         # Gaussian dropout on the weights
@@ -161,18 +151,16 @@ class Layers(object):
         # TODO put padding=padding in 1.9.0, verify strides (before strides = strides)
         yN = torch.nn.functional.conv3d(xN, WN, stride=strides, padding=1)
         ysh = yN.shape
-        # print(f"ysh: {ysh}\n\n")
-
-        y = torch.reshape(yN, [batch_size, n_out, ysh[2], ysh[3], ysh[4], self.group_dim]) # Dims to check
-        return (y, WN)
+        y = torch.reshape(yN, [batch_size, n_out, self.group_dim, ysh[2], ysh[3], ysh[4]])
+        return (y)
 
 
     def Gres_block(self, x, kernel_size, n_out, is_training, use_bn=True,
-                   strides=1, padding="same", fnc=tf.nn.relu, drop_sigma=0.1,  name="Gres_block"):
+                   strides=1, padding="same", fnc=torch.nn.functional.relu, drop_sigma=0.1,  name="Gres_block"):
         """Residual block style 3D group convolution
         
         Args:
-            x: [batch_size, height, width, n_in, group_dim/1]
+            x: [batch_size, n_in, group_dim|1, height, width, depth]
             kernel_size: int for the spatial size of the kernel
             n_out: int for number of output channels
             strides: int for spatial stride length
@@ -184,19 +172,20 @@ class Layers(object):
         y = self.Gconv_block(x, kernel_size, n_out, is_training, use_bn=use_bn, strides=strides, 
                                 padding=padding, fnc=fnc, drop_sigma=drop_sigma, name="Gconv_blocka")
         y = self.Gconv_block(y, kernel_size, n_out, is_training, use_bn=use_bn, drop_sigma=drop_sigma,
-                                fnc=tf.identity, name="Gconv_blockb")
+                                fnc=torch.nn.Identity(), name="Gconv_blockb")
 
         # Recombine with shortcut
         # a) resize and pad input if necessary
-        xsh = tf.shape(input=x)
-        ysh = tf.shape(input=y)
+        xsh = x.shape 
+        ysh = y.shape
         xksize = (1,kernel_size,kernel_size,kernel_size,1)
         xstrides = (1,strides,strides,strides,1)
-        x = tf.reshape(x, tf.concat([xsh[:4],[-1,]], 0))
+
+        x = torch.reshape(x, tf.concat([xsh[:4],[-1,]], 0))
         x = tf.nn.avg_pool3d(x, xksize, xstrides, "same")
         x = tf.reshape(x, tf.concat([ysh[:4],[-1,self.group_dim]], 0))
         
-        diff = n_out - x.get_shape().as_list()[-2]
+        diff = n_out - xsh[-2]
         paddings = tf.constant([[0,0],[0,0],[0,0],[0,0],[0,diff],[0,0]])
         x = tf.pad(tensor=x, paddings=paddings)
         
