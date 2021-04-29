@@ -9,6 +9,19 @@ import tensorflow as tf
 import torch
 
 
+def calc_same_padding(
+    input_,
+    kernel=1,
+    stride=1,
+    dilation=1,
+    transposed=False,
+):
+    if transposed:
+        return (dilation * (kernel - 1) + 1) // 2 - 1, input_ // (1. / stride)
+    else:
+        return (dilation * (kernel - 1) + 1) // 2, input_ // stride
+
+
 class Layers(object):
     def __init__(self, group):
         if group == "V":
@@ -39,7 +52,7 @@ class Layers(object):
         return w
 
 
-    def conv(self, x, kernel_size, n_out, strides=1, padding="same"):
+    def conv(self, x, kernel_size, n_out, strides=1, padding=1, input_size=None):
         """A basic 3D convolution
 
         Args:
@@ -55,7 +68,18 @@ class Layers(object):
         W = self.get_kernel([n_out, n_in, kernel_size, kernel_size, kernel_size])
 
         # TODO put padding = padding when 1.9.1 comes out
-        return torch.nn.functional.conv3d(x, W, stride=(strides,strides,strides), padding=1)
+        if padding == "same":
+            assert input_size, "`padding='same'` requires the argument `input_size` before torch 1.9.1"
+            p, _ = calc_same_padding(input_=input_size,
+                                     kernel=kernel_size,
+                                     stride=strides,
+                                     transposed=False)
+        elif type(input_size) == int:
+            p = padding
+        else:
+            raise ValueError(f"Invalid padding value: {padding}")
+            
+        return torch.nn.functional.conv3d(x, W, stride=(strides,strides,strides), padding=p)
 
 
     def conv_block(self, x, kernel_size, n_out, is_training, use_bn=True, strides=1,
