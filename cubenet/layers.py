@@ -15,12 +15,12 @@ class Layers(object):
             self.group = V_group2()
             self.group_dim = self.group.group_dim
         elif group == "S4":
-            from S4_group import S4_group
-            self.group = S4_group()
+            from S4_group2 import S4_group2
+            self.group = S4_group2()
             self.group_dim = self.group.group_dim
         elif group == "T4":
-            from T4_group import T4_group
-            self.group = T4_group()
+            from T4_group2 import T4_group2
+            self.group = T4_group2()
             self.group_dim = self.group.group_dim
         else:
             print("Group is not recognized")
@@ -128,7 +128,7 @@ class Layers(object):
         yN = tf.nn.conv3d(xN, WN, strides, padding)
         ysh = yN.get_shape().as_list()
         y = tf.reshape(yN, [batch_size, ysh[1], ysh[2], ysh[3], n_out, self.group_dim])
-        return (y, WN)
+        return y
 
 
     def Gres_block(self, x, kernel_size, n_out, is_training, use_bn=True,
