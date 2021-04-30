@@ -296,12 +296,28 @@ class Layers(object):
 
 def conv3d(in_channels: int,
            out_channels: int,
-           kernel_size: int,
+           kernel_size: int = 3,
            stride: Union[int, List[int]] = 1,
            padding: Union[str, int] = 1,
            bias: bool = True,
            dilation: int = 1) -> nn.Module:
+    """[summary]
 
+    Args:
+        in_channels (int): [description]
+        out_channels (int): [description]
+        kernel_size (int): [description]. Defaults to 3.
+        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
+        padding (Union[str, int], optional): [description]. Defaults to 1.
+        bias (bool, optional): [description]. Defaults to True.
+        dilation (int, optional): [description]. Defaults to 1.
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        nn.Module: [description]
+    """
     if padding == "same":
         p = (dilation * (kernel_size - 1) + 1) // 2
     elif isinstance(padding, int):
@@ -316,3 +332,60 @@ def conv3d(in_channels: int,
                      padding=p,
                      bias=bias,
                      dilation=dilation)
+
+
+class ConvBlock(nn.Module):
+    """[summary]
+
+    Args:
+        in_channels (int): [description]
+        out_channels (int): [description]
+        kernel_size (int): [description]. Defaults to 3.
+        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
+        padding (Union[str, int], optional): [description]. Defaults to 1.
+        bias (bool, optional): [description]. Defaults to True.
+        dilation (int, optional): [description]. Defaults to 1.
+        nonlinearity (Optional[str], optional): [description]. Defaults to "relu".
+        normalization (Optional[str], optional): [description]. Defaults to "bn".
+
+    Raises:
+        ValueError: [description]
+        ValueError: [description]
+    """
+
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: int = 3,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1,
+                 bias: bool = True,
+                 dilation: int = 1,
+                 nonlinearity: Optional[str] = "relu",
+                 normalization: Optional[str] = "bn"):
+        super(ConvBlock, self).__init__()
+
+        modules = [
+            conv3d(in_channels, out_channels, kernel_size, stride, padding,
+                   bias, dilation)
+        ]
+
+        # ! WARNING: You'll end up using a batch size of 1, we need another
+        # ! normalization layer (e.g. switchnorm).
+        if normalization:
+            if normalization == "bn":
+                modules.append(nn.BatchNorm3d(out_channels))
+            else:
+                raise ValueError(
+                    f"Invalid normalization value: {normalization}")
+
+        if nonlinearity:
+            if nonlinearity == "relu":
+                modules.append(nn.ReLU(inplace=True))
+            else:
+                raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
+
+        self.block = nn.Sequential(*modules)
+
+    def forward(self, x):
+        return self.block(x)
