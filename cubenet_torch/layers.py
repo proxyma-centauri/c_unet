@@ -7,6 +7,8 @@ import time
 import numpy as np
 import tensorflow as tf
 import torch
+import torch.nn.functional as F
+from torch import nn
 
 
 def calc_same_padding(
@@ -46,8 +48,8 @@ class Layers(object):
 
     def get_kernel(self, shape, trainable=True):
         w = torch.empty(shape, requires_grad=trainable)
-        # torch.nn.init.kaiming_normal_(w, nonlinearity="relu")
-        torch.nn.init.constant_(w, 2.0)  # For testing purposes
+        # nn.init.kaiming_normal_(w, nonlinearity="relu")
+        nn.init.constant_(w, 2.0)  # For testing purposes
         return w
 
     def conv(self,
@@ -84,10 +86,7 @@ class Layers(object):
         else:
             raise ValueError(f"Invalid padding value: {padding}")
 
-        return torch.nn.functional.conv3d(x,
-                                          W,
-                                          stride=(strides, strides, strides),
-                                          padding=p)
+        return F.conv3d(x, W, stride=(strides, strides, strides), padding=p)
 
     def conv_block(self,
                    x,
@@ -97,15 +96,15 @@ class Layers(object):
                    use_bn=True,
                    strides=1,
                    padding="same",
-                   fnc=torch.nn.functional.relu):
+                   fnc=F.relu):
         """Convolution with batch normalization/bias and nonlinearity"""
         y = self.conv(x, kernel_size, n_out, strides=strides, padding=padding)
         if use_bn:
             # TODO verify that this is sufficiently close to TF2 (weights ?)
-            BatchNormalization = torch.nn.BatchNorm3d(n_out)
+            BatchNormalization = nn.BatchNorm3d(n_out)
             return fnc(BatchNormalization(y))
         else:
-            bias = torch.nn.init.constant_(torch.empty(list(y.shape)), 0.01)
+            bias = nn.init.constant_(torch.empty(list(y.shape)), 0.01)
             return fnc(torch.add(y, bias))
 
     def Gconv_block(self,
@@ -116,7 +115,7 @@ class Layers(object):
                     use_bn=True,
                     strides=1,
                     padding="same",
-                    fnc=torch.nn.functional.relu,
+                    fnc=F.relu,
                     name="Gconv_block",
                     drop_sigma=0.1):
         """Convolution with batch normalization/bias and nonlinearity"""
@@ -132,10 +131,10 @@ class Layers(object):
         if use_bn:
             y = torch.reshape(
                 y, [ysh[0], n_out * self.group_dim, ysh[3], ysh[4], ysh[5]])
-            BatchNormalization = torch.nn.BatchNorm3d(n_out * self.group_dim)
+            BatchNormalization = nn.BatchNorm3d(n_out * self.group_dim)
             y = fnc(torch.reshape(BatchNormalization(y), ysh))
         else:
-            bias = torch.nn.init.constant_(torch.empty(list(y.shape)), 0.01)
+            bias = nn.init.constant_(torch.empty(list(y.shape)), 0.01)
             y = fnc(torch.add(y, bias))
         return y.permute([0, 2, 1, 3, 4, 5])
 
@@ -220,7 +219,7 @@ class Layers(object):
                         mode='REFLECT')
 
         # TODO put padding=padding in 1.9.0, verify strides (before strides = strides)
-        yN = torch.nn.functional.conv3d(xN, WN, stride=strides, padding=1)
+        yN = F.conv3d(xN, WN, stride=strides, padding=1)
         ysh = yN.shape
         y = torch.reshape(
             yN, [batch_size, n_out, self.group_dim, ysh[2], ysh[3], ysh[4]])
@@ -234,7 +233,7 @@ class Layers(object):
                    use_bn=True,
                    strides=1,
                    padding="same",
-                   fnc=torch.nn.functional.relu,
+                   fnc=F.relu,
                    drop_sigma=0.1,
                    name="Gres_block"):
         """Residual block style 3D group convolution
@@ -265,7 +264,7 @@ class Layers(object):
                              is_training,
                              use_bn=use_bn,
                              drop_sigma=drop_sigma,
-                             fnc=torch.nn.Identity(),
+                             fnc=nn.Identity(),
                              name="Gconv_blockb")
 
         # Recombine with shortcut
