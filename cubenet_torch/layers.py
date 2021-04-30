@@ -3,13 +3,14 @@ import argparse
 import os
 import sys
 import time
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.autograd import Variable
 
 
 def calc_same_padding(
@@ -389,3 +390,30 @@ class ConvBlock(nn.Module):
 
     def forward(self, x):
         return self.block(x)
+
+
+class GaussianDropout(nn.Module):
+    """[summary]
+
+    Args:
+        α (float): [description]. Defaults to 1.0.
+    """
+
+    def __init__(self, α: float = 1.0):
+        super(GaussianDropout, self).__init__()
+        self.α = torch.Tensor([α])
+
+    def forward(self, x):
+        """
+        Sample noise   e ~ N(1, α)
+        Multiply noise h = h_ * e
+        """
+        if self.train():
+            # N(1, α)
+            ε = torch.randn(x.size()) * self.α + 1
+
+            ε = Variable(ε)
+
+            return x * ε
+        else:
+            return x
