@@ -396,12 +396,12 @@ class GaussianDropout(nn.Module):
     """[summary]
 
     Args:
-        α (float): [description]. Defaults to 1.0.
+        p (float): Zero-out probability. Defaults to 1.0.
     """
 
-    def __init__(self, α: float = 1.0):
+    def __init__(self, p: float = 1.0):
         super(GaussianDropout, self).__init__()
-        self.α = torch.Tensor([α])
+        self.α = torch.Tensor([p / (1 - p)])
 
     def forward(self, x):
         """
