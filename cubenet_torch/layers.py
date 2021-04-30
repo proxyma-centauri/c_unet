@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import time
+from typing import List, Union, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -81,7 +82,7 @@ class Layers(object):
                                      kernel=kernel_size,
                                      stride=strides,
                                      transposed=False)
-        elif type(input_size) == int:
+        elif type(padding) == int:
             p = padding
         else:
             raise ValueError(f"Invalid padding value: {padding}")
@@ -288,3 +289,30 @@ class Layers(object):
         # b) recombine
         #return fnc(x+y)
         return x + y
+
+
+# [BEGIN REFACTORING]
+
+
+def conv3d(in_channels: int,
+           out_channels: int,
+           kernel_size: int,
+           stride: Union[int, List[int]] = 1,
+           padding: Union[str, int] = 1,
+           bias: bool = True,
+           dilation: int = 1) -> nn.Module:
+
+    if padding == "same":
+        p = (dilation * (kernel_size - 1) + 1) // 2
+    elif isinstance(padding, int):
+        p = padding
+    else:
+        raise ValueError(f"Invalid padding value: {padding}")
+
+    return nn.Conv3d(in_channels,
+                     out_channels,
+                     kernel_size,
+                     stride=stride,
+                     padding=p,
+                     bias=bias,
+                     dilation=dilation)
