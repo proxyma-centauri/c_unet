@@ -15,6 +15,11 @@ class V_group(object):
 
 
     def get_cayleytable(self):
+        """Returns the Cayley table of V group
+
+        Returns:
+            4 by 4 numpy array
+        """
         print("...Computing Cayley table")
         cayley = np.asarray([[0,1,2,3],
                              [1,0,3,2],
@@ -27,9 +32,9 @@ class V_group(object):
         """Rotate the tensor x with all 4 Klein Vierergruppe rotations
 
         Args:
-            x: [h,w,d,n_channels]
+            x: [n_channels, h,w,d]
         Returns:
-            list of 4 rotations of x [[h,w,d,n_channels],....]
+            list of 4 rotations of x [[n_channels,h,w,d],....]
         """
         xsh = x.shape
         angles = [0.,np.pi]
@@ -54,7 +59,13 @@ class V_group(object):
 
 
     def G_permutation(self, W):
-        """Permute the outputs of the group convolution"""
+        """Permute the outputs of the group convolution
+        
+        Args:
+            W: [n_channels_in, h, w, d, group_dim, n_channels_out, group_dim]
+        Returns:
+            list of 4 permutations of W [[n_channels_in, h, w, d, group_dim, n_channels_out, group_dim],....]
+        """
         Wsh = W.shape
         cayley = self.cayleytable
         U = []
@@ -70,6 +81,13 @@ class V_group(object):
 
 
     def get_permutation_matrix(self, perm, dim):
+        """Creates and return the permutation matrix
+        
+        Args:
+            perm: numpy matrix (Cayley matrix of the group)
+        Returns:
+            float Tensor
+        """
         # TODO : make cleaner
         ndim = perm.shape[0]
         mat = np.zeros((ndim, ndim))

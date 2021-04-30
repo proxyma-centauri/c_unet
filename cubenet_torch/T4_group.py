@@ -39,9 +39,9 @@ class T4_group(object):
         """Rotate the tensor x with all 12 T4 rotations
 
         Args:
-            x: [h,w,d,n_channels]
+            x: [n_channels, h,w,d]
         Returns:
-            list of 12 rotations of x [[h,w,d,n_channels],....]
+            list of 12 rotations of x [[n_channels,h,w,d],....]
         """
         Z = []
         for i in range(3):
@@ -62,7 +62,13 @@ class T4_group(object):
 
 
     def G_permutation(self, W):
-        """Permute the outputs of the group convolution"""
+        """Permute the outputs of the group convolution
+        
+        Args:
+            W: [n_channels_in, h, w, d, group_dim, n_channels_out, group_dim]
+        Returns:
+            list of 12 permutations of W [[n_channels_in, h, w, d, group_dim, n_channels_out, group_dim],....]
+        """
         Wsh = W.shape
         cayley = self.cayleytable
         U = []
@@ -78,6 +84,13 @@ class T4_group(object):
 
 
     def get_permutation_matrix(self, perm, dim):
+        """Creates and return the permutation matrix
+        
+        Args:
+            perm: numpy matrix (Cayley matrix of the group)
+        Returns:
+            float Tensor
+        """
         # TODO : make cleaner
         ndim = perm.shape[0]
         mat = np.zeros((ndim, ndim))
@@ -128,6 +141,11 @@ class T4_group(object):
 
 
     def get_cayleytable(self):
+        """Returns the Cayley table of V group
+
+        Returns:
+            4 by 4 numpy array
+        """
         Z = self.get_t4mat()
         cayley = []
         for y in Z:
