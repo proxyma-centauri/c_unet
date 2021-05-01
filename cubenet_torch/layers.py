@@ -417,3 +417,123 @@ class GaussianDropout(nn.Module):
             return x * ε
         else:
             return x
+
+
+class Gconv3d(nn.Module):
+    """[summary]
+
+    Args:
+        group (str): [description]
+        expected_group_dim (int): [description]
+        in_channels (int): [description]
+        out_channels (int): [description]
+        kernel_size (int, optional): [description]. Defaults to 3.
+        dilation (int, optional): [description]. Defaults to 1.
+        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
+        padding (Union[str, int], optional): [description]. Defaults to 1.
+        dropout (float, optional): [description]. Defaults to 0.1.
+
+    Raises:
+        ValueError: [description]
+        ValueError: [description]
+    """
+
+    def __init__(self,
+                 group: str,
+                 expected_group_dim: int,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: int = 3,
+                 dilation: int = 1,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1,
+                 dropout: float = 0.1):
+        super(Gconv3d, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+
+        if padding == "same":
+            self.p = (dilation * (kernel_size - 1) + 1) // 2
+        elif isinstance(padding, int):
+            self.p = padding
+        else:
+            raise ValueError(f"Invalid padding value: {padding}")
+
+        if group == "V":
+            from cubenet_torch.V_group import V_group
+            self.group = V_group()
+            self.group_dim = self.group.group_dim
+        elif group == "S4":
+            from cubenet_torch.S4_group import S4_group
+            self.group = S4_group()
+            self.group_dim = self.group.group_dim
+        elif group == "T4":
+            from cubenet_torch.T4_group import T4_group
+            self.group = T4_group()
+            self.group_dim = self.group.group_dim
+        else:
+            raise ValueError(f"Group '{group}' is not recognized.")
+
+        # Constants
+        #! self.cayley is never used?
+        self.cayley = self.group.cayleytable
+
+        # W is the base filter. We rotate it 4 times for a p4 convolution over
+        # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
+        # one dimension in the channels.
+        self.W = nn.Parameter(
+            torch.empty([
+                in_channels * expected_group_dim * out_channels, kernel_size,
+                kernel_size, kernel_size
+            ]))
+        nn.init.kaiming_normal_(self.W, nonlinearity="relu")
+
+        self.dropout = GaussianDropout(p=dropout)
+
+    def forward(self, x):
+        bs, c, g, h, w, d = x.shape
+
+        # Reshape and rotate the io filters 4 times. Each input-output pair is
+        # rotated and stacked into a much bigger kernel
+        x = x.view(bs, c * g, h, w, d)
+
+        WN = self.group.get_Grotations(self.W)
+        WN = torch.stack(WN, 0)
+
+        if g == 1:
+            # A convolution on R^2 is just standard convolution with 3 extra
+            # output channels for each rotation of the filters
+            WN = WN.view(-1, self.in_channels, self.kernel_size,
+                         self.kernel_size, self.kernel_size)
+        elif g == self.group_dim:
+            # A convolution on p4 is different to convolution on R^2. For each
+            # dimension of the group output, we need to both rotate the filters
+            # and circularly shift them in the input-group dimension. In a
+            # sense, we have to spiral the filters
+            WN = WN.view(self.in_channels, self.kernel_size, self.kernel_size,
+                         self.kernel_size, self.group_dim, self.out_channels,
+                         self.group_dim)
+
+            WN_shifted = self.group.G_permutation(WN)
+            WN = torch.stack(WN_shifted, -1)
+
+            # Shift over axis 6
+            # Stack the shifted tensors and reshape to 4D kernel
+            WN = WN.view(self.out_channels * self.group_dim,
+                         self.in_channels * self.group_dim, self.kernel_size,
+                         self.kernel_size, self.kernel_size)
+        else:
+            raise ValueError(f"`group_dim` ({g}) doesn't match input data")
+
+        # Convolve
+        # Gaussian dropout on the weights
+        WN = self.dropout(WN)
+
+        # todo: check if we really need padding like `reflect` or `valid`
+        x = F.conv3d(x, WN, stride=self.stride, padding=self.p)
+        _, _, h, w, d = x.shape
+        x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
+
+        return x
