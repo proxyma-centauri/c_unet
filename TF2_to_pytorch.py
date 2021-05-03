@@ -17,6 +17,7 @@ compare = True
 
 # Group
 group = "S4"
+group_size = 24
 
 # Inputs
 kernel_size = 3
@@ -82,8 +83,8 @@ if TF2:
     x = tf.expand_dims(x, -1)
     x2 = tf.expand_dims(x2, -1)
     
-    Gx_TF2 = layers_v2.Gconv_block(x, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
-    Gx_TF2_2 = layers_v2.Gconv_block(Gx_TF2, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
+    Gx_TF2 = layers_v2.Gconv(x, kernel_size, n_out, is_training, drop_sigma=ds)
+    Gx_TF2_2 = layers_v2.Gconv(Gx_TF2, kernel_size, n_out, is_training, drop_sigma=ds)
 
     print("\n ------After transformations TF2----------")
     print(f"conv : {x_TF2.shape}")
@@ -100,23 +101,28 @@ if TF2:
 ## PYTORCH
 if PYTORCH:
     sys.path.append('./cubenet_torch')
-    from cubenet_torch.layers import Layers as PLayers
+    from cubenet_torch.layers import Gconv3d, ConvBlock
 
-    layers_p = PLayers(group)
-    group_dim_p = layers_p.group_dim
-
-    x_P = layers_p.conv_block(x_p, kernel_size, n_out, is_training, use_bn=use_bn)
-    x_P_2 = layers_p.conv_block(x_P, kernel_size, n_out, is_training, use_bn=use_bn)
+    conv_block1 = ConvBlock(n_in, n_out, kernel_size, bias=not(use_bn), normalization="bn", nonlinearity="relu")
+    conv_block2 = ConvBlock(n_out, n_out, kernel_size, bias=not(use_bn), normalization="bn", nonlinearity="relu")
+    
+    x_P = conv_block1.forward(x_p)
+    x_P_2 = conv_block2.forward(x_P)
 
     x_p = x_p.unsqueeze(2)
     x2_p = x2_p.unsqueeze(2)
 
-    Gx_P = layers_p.Gconv_block(x_p, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn) # drop_sigma=ds, use_bn=use_bn
-    Gx_P_2 = layers_p.Gconv_block(Gx_P, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
+    g_conv1 = Gconv3d(group, 1, n_in, n_out, dropout=ds)
+    g_conv2 = Gconv3d(group, group_size, n_out, n_in, dropout=ds)
+
+    Gx_P = g_conv1.forward(x_p)
+    Gx_P_2 = g_conv2.forward(Gx_P)
 
     print("\n ------After transformations Pytorch----------")
     print(f"conv : {x_P.shape}")
-    print(f"G-conv {Gx_P.shape}")
+    print(f"conv 2 : {x_P_2.shape}")
+    print(f"G-conv :{Gx_P.shape}")
+    print(f"G-conv 2 :{Gx_P_2.shape}")
 
     np.save("./npys/convP.npy", x_P.detach().numpy(), allow_pickle=False)
     np.save("./npys/convP_2.npy", x_P_2.detach().numpy(), allow_pickle=False)
@@ -156,10 +162,10 @@ if compare:
         fig=plt.figure(figsize=(8, 8))
         for i in range(2):
             fig.add_subplot((i+1), 4, 1+(i*4))
-            plt.imshow(to_compare_P[i,:,:])
+            plt.imshow(to_compare_gP[i,:,:])
 
             fig.add_subplot((i+1), 4, 2+(i*4))
-            plt.imshow(to_compare_gP[i,:,:])
+            plt.imshow(to_compare_gTF2[i,:,:])
 
             fig.add_subplot((i+1), 4, 3+(i*4))
             plt.imshow(gbool_map[i,:,:])
