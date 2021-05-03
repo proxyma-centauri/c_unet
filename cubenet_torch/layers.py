@@ -477,9 +477,7 @@ class Gconv3d(nn.Module):
             raise ValueError(f"Group '{group}' is not recognized.")
 
         # Constants
-        #! self.cayley is never used?
-        self.cayley = self.group.cayleytable
-
+        
         # W is the base filter. We rotate it 4 times for a p4 convolution over
         # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
         # one dimension in the channels.
