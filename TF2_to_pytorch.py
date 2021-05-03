@@ -83,8 +83,8 @@ if TF2:
     x = tf.expand_dims(x, -1)
     x2 = tf.expand_dims(x2, -1)
     
-    Gx_TF2 = layers_v2.Gconv(x, kernel_size, n_out, is_training, drop_sigma=ds)
-    Gx_TF2_2 = layers_v2.Gconv(Gx_TF2, kernel_size, n_out, is_training, drop_sigma=ds)
+    Gx_TF2 = layers_v2.Gconv_block(x, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
+    Gx_TF2_2 = layers_v2.Gconv_block(Gx_TF2, kernel_size, n_out, is_training, drop_sigma=ds, use_bn=use_bn)
 
     print("\n ------After transformations TF2----------")
     print(f"conv : {x_TF2.shape}")
@@ -101,7 +101,7 @@ if TF2:
 ## PYTORCH
 if PYTORCH:
     sys.path.append('./cubenet_torch')
-    from cubenet_torch.layers import Gconv3d, ConvBlock
+    from cubenet_torch.layers import GconvBlock, ConvBlock, Gconv3d
 
     conv_block1 = ConvBlock(n_in, n_out, kernel_size, bias=not(use_bn), normalization="bn", nonlinearity="relu")
     conv_block2 = ConvBlock(n_out, n_out, kernel_size, bias=not(use_bn), normalization="bn", nonlinearity="relu")
@@ -112,8 +112,8 @@ if PYTORCH:
     x_p = x_p.unsqueeze(2)
     x2_p = x2_p.unsqueeze(2)
 
-    g_conv1 = Gconv3d(group, 1, n_in, n_out, dropout=ds)
-    g_conv2 = Gconv3d(group, group_size, n_out, n_in, dropout=ds)
+    g_conv1 = GconvBlock(group, 1, n_in, n_out)
+    g_conv2 = GconvBlock(group, group_size, n_out, n_out)
 
     Gx_P = g_conv1.forward(x_p)
     Gx_P_2 = g_conv2.forward(Gx_P)
