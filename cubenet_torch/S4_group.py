@@ -72,9 +72,9 @@ class S4_group(object):
             perm_mat = self.get_permutation_matrix(cayley, i)
             w = W[:,:,:,:,:,:,i]
             w = w.permute([0,1,2,3,5,4])
-            w = torch.reshape(w, [-1, 24])
+            w = w.view([-1, 24])
             w = torch.matmul(w, perm_mat)
-            w = torch.reshape(w, list(Wsh[:4])+[-1,24])
+            w = w.view(list(Wsh[:4])+[-1,24])
             U.append(w.permute([0,1,2,3,5,4]))
         return U
 
