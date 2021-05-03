@@ -497,7 +497,7 @@ class Gconv3d(nn.Module):
 
         # Reshape and rotate the io filters 4 times. Each input-output pair is
         # rotated and stacked into a much bigger kernel
-        x = x.view(bs, c * g, h, w, d)
+        x = x.reshape(bs, c * g, h, w, d)
 
         WN = self.group.get_Grotations(self.W)
         WN = torch.stack(WN, 0)
@@ -537,3 +537,117 @@ class Gconv3d(nn.Module):
         x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
 
         return x
+
+
+class GconvBlock(nn.Module):
+    """Applies a 3D convolution with optional normalization and nonlinearity steps block
+
+    Args:
+        group (str): Shorthand name representing the group to use
+        expected_group_dim (int): Expected group dimension, it is 
+            equal to the group dimension, except for the first Gconv of a series.
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        kernel_size (int): Size of the kernel. Defaults to 3.
+        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
+        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
+        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
+        dropout (float, optional) : Value of dropout to use. Defaults to 0.1
+        nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
+        normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
+
+    Raises:
+        ValueError: Invalid normalization value
+        ValueError: Invalid nonlinearity value
+    """
+    def __init__(self,
+                group: str,
+                expected_group_dim: int,
+                in_channels: int,
+                out_channels: int,
+                kernel_size: int = 3,
+                stride: Union[int, List[int]] = 1,
+                padding: Union[str, int] = 1,
+                dilation: int = 1,
+                dropout: float = 0.1,
+                bias: Optional[bool] = True,
+                nonlinearity: Optional[str] = "relu",
+                normalization: Optional[str] = "bn"):
+        super(GconvBlock, self).__init__()
+
+        modules = [Gconv3d(group,
+                    expected_group_dim,
+                    in_channels,
+                    out_channels,
+                    kernel_size,
+                    stride,
+                    padding,
+                    dilation,
+                    dropout
+        )]   
+
+        # Adding permutation, may be useless
+        modules.append(ChannelGroupPermutation())
+
+        if bias:
+            modules.append(AddBias())
+
+        # ! WARNING: You'll end up using a batch size of 1, we need another
+        # ! normalization layer (e.g. switchnorm).
+        if normalization:
+            if normalization == "bn":
+                modules.append(ReshapedBatchNorm())
+            else:
+                raise ValueError(
+                    f"Invalid normalization value: {normalization}")
+        
+        if nonlinearity:
+            if nonlinearity == "relu":
+                modules.append(nn.ReLU(inplace=True))
+            else:
+                raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
+
+        modules.append(ChannelGroupPermutation())
+
+        self.G_block = nn.Sequential(*modules)
+
+    def forward(self, x):
+        return self.G_block(x)
+
+
+class ReshapedBatchNorm(nn.Module):
+    """ Performs BatchNormalization through BatchNorm3d,
+        after having reshaped the data into a 5d Tensor"""
+
+    def __init__(self):
+        super(ReshapedBatchNorm, self).__init__()
+
+    def forward(self, x):
+        bs, c, g, h, w, d = x.shape
+        x = x.reshape([bs, c * g, h, w, d])
+        BatchNormalization = nn.BatchNorm3d(c * g)
+        x = (BatchNormalization(x)).view([bs, c, g, h, w, d])
+        return x
+
+class AddBias(nn.Module):
+    """ Performs BatchNormalization through BatchNorm3d,
+        after having reshaped the data into a 5d Tensor"""
+
+    def __init__(self):
+        super(AddBias, self).__init__()
+        self.bias = nn.init.constant_(nn.Parameter(torch.ones(1)), 0.01)
+
+    def forward(self, x):
+        return x + self.bias
+
+class ChannelGroupPermutation(nn.Module):
+    """ Performs a permutation along the second and third axis.
+        May not be useful
+    """
+
+    def __init__(self):
+        super(ChannelGroupPermutation, self).__init__()
+
+    def forward(self, x):
+        return x.permute([0, 2, 1, 3, 4, 5])
