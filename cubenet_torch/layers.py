@@ -302,22 +302,22 @@ def conv3d(in_channels: int,
            padding: Union[str, int] = 1,
            bias: bool = True,
            dilation: int = 1) -> nn.Module:
-    """[summary]
+    """Applies a 3D convolution over an input signal composed of several input planes.
 
     Args:
-        in_channels (int): [description]
-        out_channels (int): [description]
-        kernel_size (int): [description]. Defaults to 3.
-        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
-        padding (Union[str, int], optional): [description]. Defaults to 1.
-        bias (bool, optional): [description]. Defaults to True.
-        dilation (int, optional): [description]. Defaults to 1.
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        kernel_size (int): Size of the kernel. Defaults to 3.
+        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
+        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
+        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
 
     Raises:
-        ValueError: [description]
+        ValueError: Invalid padding value
 
     Returns:
-        nn.Module: [description]
+        nn.Module: Conv3d
     """
     if padding == "same":
         p = (dilation * (kernel_size - 1) + 1) // 2
@@ -336,22 +336,22 @@ def conv3d(in_channels: int,
 
 
 class ConvBlock(nn.Module):
-    """[summary]
+    """Applies a 3D convolution with optional normalization and nonlinearity steps block
 
     Args:
-        in_channels (int): [description]
-        out_channels (int): [description]
-        kernel_size (int): [description]. Defaults to 3.
-        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
-        padding (Union[str, int], optional): [description]. Defaults to 1.
-        bias (bool, optional): [description]. Defaults to True.
-        dilation (int, optional): [description]. Defaults to 1.
-        nonlinearity (Optional[str], optional): [description]. Defaults to "relu".
-        normalization (Optional[str], optional): [description]. Defaults to "bn".
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        kernel_size (int): Size of the kernel. Defaults to 3.
+        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
+        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
+        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
+        nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
+        normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
 
     Raises:
-        ValueError: [description]
-        ValueError: [description]
+        ValueError: Invalid normalization value
+        ValueError: Invalid nonlinearity value
     """
 
     def __init__(self,
@@ -393,7 +393,8 @@ class ConvBlock(nn.Module):
 
 
 class GaussianDropout(nn.Module):
-    """[summary]
+    """During training, randomly zeroes some of the elements of the input tensor
+    with probability p using samples from a Gaussian distribution
 
     Args:
         p (float): Zero-out probability. Defaults to 0.5.
@@ -420,22 +421,23 @@ class GaussianDropout(nn.Module):
 
 
 class Gconv3d(nn.Module):
-    """[summary]
+    """Performs a discretized convolution on SO(3)
 
     Args:
-        group (str): [description]
-        expected_group_dim (int): [description]
-        in_channels (int): [description]
-        out_channels (int): [description]
-        kernel_size (int, optional): [description]. Defaults to 3.
-        dilation (int, optional): [description]. Defaults to 1.
-        stride (Union[int, List[int]], optional): [description]. Defaults to 1.
-        padding (Union[str, int], optional): [description]. Defaults to 1.
-        dropout (float, optional): [description]. Defaults to 0.1.
+        group (str): Shorthand name representing the group to use
+        expected_group_dim (int): Expected group dimension, it is 
+            equal to the group dimension, except for the first Gconv of a series.
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        kernel_size (int, optional): Size of the kernel. Defaults to 3.
+        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
+        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
+        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        dropout (float, optional): Value of dropout to use. Defaults to 0.1.
 
     Raises:
-        ValueError: [description]
-        ValueError: [description]
+        ValueError: Invalid padding value
+        ValueError: Unrecognized group
     """
 
     def __init__(self,
@@ -477,7 +479,7 @@ class Gconv3d(nn.Module):
             raise ValueError(f"Group '{group}' is not recognized.")
 
         # Constants
-        
+
         # W is the base filter. We rotate it 4 times for a p4 convolution over
         # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
         # one dimension in the channels.
@@ -529,7 +531,7 @@ class Gconv3d(nn.Module):
         # Gaussian dropout on the weights
         WN = self.dropout(WN)
 
-        # todo: check if we really need padding like `reflect` or `valid`
+        # TODO: check if we really need padding like `reflect` or `valid`
         x = F.conv3d(x, WN, stride=self.stride, padding=self.p)
         _, _, h, w, d = x.shape
         x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
