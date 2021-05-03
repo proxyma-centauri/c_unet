@@ -540,7 +540,8 @@ class Gconv3d(nn.Module):
 
 
 class GconvBlock(nn.Module):
-    """Applies a 3D convolution with optional normalization and nonlinearity steps block
+    """Applies a discretized convolution on SO(3) with optional bias addition,
+    normalization and nonlinearity steps block
 
     Args:
         group (str): Shorthand name representing the group to use
