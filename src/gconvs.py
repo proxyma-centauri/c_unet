@@ -1,15 +1,12 @@
-import argparse
-import os
-import sys
-import time
-from typing import List, Optional, Union
 
 import numpy as np
-import tensorflow as tf
+
 import torch
 import torch.nn.functional as F
+
 from torch import nn
 from torch.autograd import Variable
+from typing import List, Optional, Union
 
 from src.utils.dropout.GaussianDropout import GaussianDropout
 from src.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
