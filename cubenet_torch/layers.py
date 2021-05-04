@@ -302,11 +302,11 @@ class GconvBlock(nn.Module):
                 padding: Union[str, int] = 1,
                 dilation: int = 1,
                 dropout: float = 0.1,
-                use_bias: Optional[bool] = True,
+                bias: Optional[bool] = True,
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvBlock, self).__init__()
-        self.use_bias = True
+        self.bias = True
         
         self.Gconv = Gconv3d(group,
                     expected_group_dim,
@@ -318,8 +318,8 @@ class GconvBlock(nn.Module):
                     dilation,
                     dropout)
         
-        if use_bias:
-            self.bias = nn.Parameter(torch.full((1), 0.01))
+        if bias:
+            self.b = nn.Parameter(torch.full((1), 0.01))
 
         other_modules = []
 
@@ -344,8 +344,8 @@ class GconvBlock(nn.Module):
         x = self.Gconv(x)
 
         x.permute([0, 2, 1, 3, 4, 5])
-        if self.use_bias:
-            x += self.bias
+        if self.bias:
+            x += self.b
         self.OtherModules(x)
         x.permute([0, 2, 1, 3, 4, 5])
 
@@ -418,7 +418,7 @@ class GconvResBlock(nn.Module):
                             dilation,
                             dropout,
                             bias=bias,
-                            nonlinearity="", # No linearity
+                            nonlinearity="", # No nonlinearity
                             normalization=normalization
         )
         self.AvgPool = ReshapedAvgPool(kernel_size, 
