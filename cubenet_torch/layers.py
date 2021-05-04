@@ -302,12 +302,12 @@ class GconvBlock(nn.Module):
                 padding: Union[str, int] = 1,
                 dilation: int = 1,
                 dropout: float = 0.1,
-                bias: Optional[bool] = True,
+                use_bias: Optional[bool] = True,
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvBlock, self).__init__()
-
-        self.bias = bias
+        self.use_bias = True
+        
         self.Gconv = Gconv3d(group,
                     expected_group_dim,
                     in_channels,
@@ -316,7 +316,10 @@ class GconvBlock(nn.Module):
                     stride,
                     padding,
                     dilation,
-                    dropout) 
+                    dropout)
+        
+        if use_bias:
+            self.bias = nn.Parameter(torch.full((1), 0.01))
 
         other_modules = []
 
@@ -341,8 +344,8 @@ class GconvBlock(nn.Module):
         x = self.Gconv(x)
 
         x.permute([0, 2, 1, 3, 4, 5])
-        if self.bias:
-            x = x + nn.init.constant_(nn.Parameter(torch.ones(1)), 0.01)
+        if self.use_bias:
+            x += self.bias
         self.OtherModules(x)
         x.permute([0, 2, 1, 3, 4, 5])
 
