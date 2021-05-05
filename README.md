@@ -38,6 +38,39 @@ To activate the environment, do:
 conda activate NAME_OF_ENV # Replace NAME_OF_ENV by the name you put in environment.yml
 ```
 
+# Repository structure
+
+```sh
+.
+├── environment.yml.template
+├── LICENSE
+├── README.md
+└── src
+    ├── convs.py
+    ├── gconvs.py
+    ├── groups # Groups definition
+    │   ├── __init__.py
+    │   ├── S4_group.py
+    │   ├── T4_group.py
+    │   └── V_group.py
+    ├── __init__.py
+    └── utils
+        ├── dropout # Custom dropout layers
+        │   ├── GaussianDropout.py
+        │   └── __init__.py
+        ├── helpers # Helper functions
+        │   ├── helpers.py
+        │   └── __init__.py
+        ├── __init__.py
+        ├── normalization # Custom normalization layers
+        │   ├── __init__.py
+        │   └── ReshapedBatchNorm.py
+        └── pooling # Custom pooling layers
+            ├── __init__.py
+            └── ReshapedAvgPool.py
+```
+
+
 # References
 
 Part of this repository was taken from the [Cubenet repository](https://github.com/danielewworrall/cubenet), which implements some model examples described in this ECCV18 article:

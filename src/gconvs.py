@@ -1,154 +1,16 @@
-"""Models for the RFNN experiments"""
-import argparse
-import os
-import sys
-import time
-from typing import List, Optional, Union
 
 import numpy as np
-import tensorflow as tf
+
 import torch
 import torch.nn.functional as F
+
 from torch import nn
 from torch.autograd import Variable
+from typing import List, Optional, Union
 
-
-def calc_same_padding(
-    input_,
-    kernel=1,
-    stride=1,
-    dilation=1,
-    transposed=False) -> int:
-    if transposed:
-        return (dilation * (kernel - 1) + 1) // 2 - 1, input_ // (1. / stride)
-    else:
-        return (dilation * (kernel - 1) + 1) // 2, input_ // stride
-
-
-def conv3d(in_channels: int,
-           out_channels: int,
-           kernel_size: int = 3,
-           stride: Union[int, List[int]] = 1,
-           padding: Union[str, int] = 1,
-           bias: bool = True,
-           dilation: int = 1) -> nn.Module:
-    """Applies a 3D convolution over an input signal composed of several input planes.
-
-    Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        kernel_size (int): Size of the kernel. Defaults to 3.
-        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
-        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
-        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
-        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
-
-    Raises:
-        ValueError: Invalid padding value
-
-    Returns:
-        nn.Module: Conv3d
-    """
-    if padding == "same":
-        p = (dilation * (kernel_size - 1) + 1) // 2
-    elif isinstance(padding, int):
-        p = padding
-    else:
-        raise ValueError(f"Invalid padding value: {padding}")
-
-    return nn.Conv3d(in_channels,
-                     out_channels,
-                     kernel_size,
-                     stride=stride,
-                     padding=p,
-                     bias=bias,
-                     dilation=dilation)
-
-
-class ConvBlock(nn.Module):
-    """Applies a 3D convolution with optional normalization and nonlinearity steps block
-
-    Args:
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        kernel_size (int): Size of the kernel. Defaults to 3.
-        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
-        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
-        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
-        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
-        nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
-        normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
-
-    Raises:
-        ValueError: Invalid normalization value
-        ValueError: Invalid nonlinearity value
-    """
-
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: int = 3,
-                 stride: Union[int, List[int]] = 1,
-                 padding: Union[str, int] = 1,
-                 bias: bool = True,
-                 dilation: int = 1,
-                 nonlinearity: Optional[str] = "relu",
-                 normalization: Optional[str] = "bn"):
-        super(ConvBlock, self).__init__()
-
-        modules = [
-            conv3d(in_channels, out_channels, kernel_size, stride, padding,
-                   bias, dilation)
-        ]
-
-        # ! WARNING: You'll end up using a batch size of 1, we need another
-        # ! normalization layer (e.g. switchnorm).
-        if normalization:
-            if normalization == "bn":
-                modules.append(nn.BatchNorm3d(out_channels))
-            else:
-                raise ValueError(
-                    f"Invalid normalization value: {normalization}")
-
-        if nonlinearity:
-            if nonlinearity == "relu":
-                modules.append(nn.ReLU(inplace=True))
-            else:
-                raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
-
-        self.block = nn.Sequential(*modules)
-
-    def forward(self, x):
-        return self.block(x)
-
-
-class GaussianDropout(nn.Module):
-    """During training, randomly zeroes some of the elements of the input tensor
-    with probability p using samples from a Gaussian distribution
-
-    Args:
-        p (float): Zero-out probability. Defaults to 0.5.
-    """
-
-    def __init__(self, p: float = 0.5):
-        super(GaussianDropout, self).__init__()
-        self.α = torch.Tensor([p / (1 - p)])
-
-    def forward(self, x):
-        """
-        Sample noise   e ~ N(1, α)
-        Multiply noise h = h_ * e
-        """
-        if self.train():
-            # N(1, α)
-            ε = torch.randn(x.size()) * self.α + 1
-
-            ε = Variable(ε)
-
-            return x * ε
-        else:
-            return x
-
+from src.utils.dropout.GaussianDropout import GaussianDropout
+from src.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
+from src.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
 
 class Gconv3d(nn.Module):
     """Performs a discretized convolution on SO(3)
@@ -436,40 +298,3 @@ class GconvResBlock(nn.Module):
         x = self.AvgPool(x)
 
         return x + y
-
-
-class ReshapedBatchNorm(nn.Module):
-    """ Performs BatchNormalization through BatchNorm3d,
-        after having reshaped the data into a 5d Tensor"""
-
-    def __init__(self):
-        super(ReshapedBatchNorm, self).__init__()
-
-    def forward(self, x):
-        bs, c, g, h, w, d = x.shape
-        x = x.reshape([bs, c * g, h, w, d])
-        BatchNormalization = nn.BatchNorm3d(c * g)
-        x = (BatchNormalization(x)).view([bs, c, g, h, w, d])
-        return x
-
-
-class ReshapedAvgPool(nn.Module):
-    """ Performs AveragePooling through AvgPool3d,
-        after having reshaped the data into a 5d Tensor"""
-
-    def __init__(self,
-                kernel_size: int = 3,
-                stride: Union[int, List[int]] = 1,
-                padding: Union[str, int] = 1):
-
-        super(ReshapedAvgPool, self).__init__()
-        self.AvgPool = nn.AvgPool3d(kernel_size, 
-                    stride, 
-                    padding
-        )
-
-    def forward(self, x):
-        bs, c, g, h, w, d = x.shape
-        x = x.reshape([bs, c * g, h, w, d])
-        x = (self.AvgPool(x)).view([bs, c, g, h, w, d])
-        return x
