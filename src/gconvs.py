@@ -181,7 +181,7 @@ class GconvBlock(nn.Module):
                     dropout)
         
         if bias:
-            self.b = nn.Parameter(torch.full((1), 0.01))
+            self.b = nn.Parameter(torch.full((1,1), 0.01))
 
         other_modules = []
 
