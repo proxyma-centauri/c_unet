@@ -9,7 +9,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 
-class S4_group(object):
+class S4_group2(object):
     def __init__(self):
         self.group_dim = 24
         self.cayleytable = self.get_cayleytable()

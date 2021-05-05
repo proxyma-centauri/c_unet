@@ -3,9 +3,9 @@ import sys
 import time
 
 import numpy as np
-import tensorflow as tf
-import tensorflow_addons as tfa
 
+import torch
+import torchvision.transforms.functional as torchtransforms
 
 class T4_group(object):
     def __init__(self):
@@ -15,10 +15,10 @@ class T4_group(object):
     
     def rotate(self, x, axis, shift):
         angles = [0.,np.pi/2.,np.pi,3.*np.pi/2.]
-        perm = ([2,1,0,3],[0,2,1,3],[1,0,2,3])
-        x = tf.transpose(a=x, perm=perm[axis])
-        x = tfa.image.rotate(x, angles[shift])
-        return tf.transpose(a=x, perm=perm[axis])
+        perm = ([0,3,2,1],[0,1,3,2],[0,2,1,3])
+        x = x.permute(perm[axis])
+        x = torchtransforms.rotate(x, angles[shift])
+        return x.permute(perm[axis])
 
 
     def r1(self, x):
@@ -39,9 +39,9 @@ class T4_group(object):
         """Rotate the tensor x with all 12 T4 rotations
 
         Args:
-            x: [h,w,d,n_channels]
+            x: [n_channels, h,w,d]
         Returns:
-            list of 12 rotations of x [[h,w,d,n_channels],....]
+            list of 12 rotations of x [[n_channels,h,w,d],....]
         """
         Z = []
         for i in range(3):
@@ -62,27 +62,41 @@ class T4_group(object):
 
 
     def G_permutation(self, W):
-        """Permute the outputs of the group convolution"""
-        Wsh = W.get_shape().as_list()
+        """Permute the outputs of the group convolution
+        
+        Args:
+            W: [n_channels_in, h, w, d, group_dim, n_channels_out, group_dim]
+        Returns:
+            list of 12 permutations of W [[n_channels_in, h, w, d, group_dim, n_channels_out, group_dim],....]
+        """
+        Wsh = W.shape
         cayley = self.cayleytable
         U = []
         for i in range(12):
             perm_mat = self.get_permutation_matrix(cayley, i)
             w = W[:,:,:,:,:,:,i]
-            w = tf.transpose(a=w, perm=[0,1,2,3,5,4])
-            w = tf.reshape(w, [-1, 12])
-            w = w @ perm_mat
-            w = tf.reshape(w, Wsh[:4]+[-1,12])
-            U.append(tf.transpose(a=w, perm=[0,1,2,3,5,4]))
+            w = w.permute([0,1,2,3,5,4])
+            w = w.reshape([-1, 12])
+            w = torch.matmul(w, perm_mat)
+            w = w.view(list(Wsh[:4])+[-1,12])
+            U.append(w.permute([0,1,2,3,5,4]))
         return U
 
 
     def get_permutation_matrix(self, perm, dim):
+        """Creates and return the permutation matrix
+        
+        Args:
+            perm: numpy matrix (Cayley matrix of the group)
+        Returns:
+            float Tensor
+        """
+        # TODO : make cleaner
         ndim = perm.shape[0]
         mat = np.zeros((ndim, ndim))
         for j in range(ndim):
             mat[j,perm[j,dim]] = 1
-        return mat
+        return torch.from_numpy(mat).float()
 
 
     def get_t4mat(self):
@@ -127,6 +141,11 @@ class T4_group(object):
 
 
     def get_cayleytable(self):
+        """Returns the Cayley table of V group
+
+        Returns:
+            4 by 4 numpy array
+        """
         Z = self.get_t4mat()
         cayley = []
         for y in Z:
