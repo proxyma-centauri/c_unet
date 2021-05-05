@@ -56,15 +56,15 @@ class Gconv3d(nn.Module):
             raise ValueError(f"Invalid padding value: {padding}")
 
         if group == "V":
-            from cubenet_torch.V_group import V_group
+            from src.groups.V_group import V_group
             self.group = V_group()
             self.group_dim = self.group.group_dim
         elif group == "S4":
-            from cubenet_torch.S4_group import S4_group
+            from src.groups.S4_group import S4_group
             self.group = S4_group()
             self.group_dim = self.group.group_dim
         elif group == "T4":
-            from cubenet_torch.T4_group import T4_group
+            from src.groups.T4_group import T4_group
             self.group = T4_group()
             self.group_dim = self.group.group_dim
         else:
