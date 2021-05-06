@@ -25,6 +25,6 @@ class GaussianDropout(nn.Module):
 
             ε = Variable(ε)
 
-            return x * ε
+            return x * ε.to(x.device())
         else:
             return x
