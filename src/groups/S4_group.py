@@ -69,7 +69,7 @@ class S4_group(object):
         cayley = self.cayleytable
         U = []
         for i in range(24):
-            perm_mat = self.get_permutation_matrix(cayley, i)
+            perm_mat = self.get_permutation_matrix(cayley, i).to(W.device)
             w = W[:,:,:,:,:,:,i]
             w = w.permute([0,1,2,3,5,4])
             w = w.reshape([-1, 24])
