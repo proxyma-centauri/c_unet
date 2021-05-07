@@ -179,7 +179,9 @@ class GconvBlock(nn.Module):
                     padding,
                     dilation,
                     dropout)
-        
+
+        group_dim = self.Gconv.group_dim
+
         if bias:
             self.b = nn.Parameter(torch.full((1,1), 0.01))
 
@@ -189,7 +191,7 @@ class GconvBlock(nn.Module):
         # ! normalization layer (e.g. switchnorm).
         if normalization:
             if normalization == "bn":
-                other_modules.append(ReshapedBatchNorm())
+                other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
             else:
                 raise ValueError(
                     f"Invalid normalization value: {normalization}")
