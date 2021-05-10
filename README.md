@@ -97,6 +97,16 @@ The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchN
 }
 ```
 
+The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py), which corresponds to:
+```
+@article{SwitchableNorm,
+  title={Differentiable Learning-to-Normalize via Switchable Normalization},
+  author={Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li},
+  journal={International Conference on Learning Representation (ICLR)},
+  year={2019}
+}
+```
+
 # License
 
 **TODO**
