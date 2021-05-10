@@ -8,6 +8,7 @@ everything
 npys
 test_scripts
 environment.yml
+logs/
 
 *.tar
 *.png
