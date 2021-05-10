@@ -34,8 +34,16 @@ conda env create -f environment.yml
 
 To activate the environment, do:
 
-```
+```sh
 conda activate NAME_OF_ENV # Replace NAME_OF_ENV by the name you put in environment.yml
+```
+
+### Setting up the logs directory
+
+In the root of the repo, do:
+
+```sh
+mkdir logs
 ```
 
 # Repository structure
@@ -45,6 +53,7 @@ conda activate NAME_OF_ENV # Replace NAME_OF_ENV by the name you put in environm
 ├── environment.yml.template
 ├── LICENSE
 ├── README.md
+├── logs # logging directory created during install
 └── src
     ├── convs.py
     ├── gconvs.py
@@ -62,6 +71,10 @@ conda activate NAME_OF_ENV # Replace NAME_OF_ENV by the name you put in environm
         │   ├── helpers.py
         │   └── __init__.py
         ├── __init__.py
+        ├── logging # Logging definition module
+        │   ├── logging.py
+        │   ├── loggingConfig.yml # Logging configuration
+        │   └── __init__.py
         ├── normalization # Custom normalization layers
         │   ├── __init__.py
         │   └── ReshapedBatchNorm.py
@@ -84,6 +97,16 @@ Part of this repository was taken from the [Cubenet repository](https://github.c
   pages     = {585--602},
   year      = {2018},
   doi       = {10.1007/978-3-030-01228-1\_35},
+}
+```
+
+The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py), which corresponds to:
+```
+@article{SwitchableNorm,
+  title={Differentiable Learning-to-Normalize via Switchable Normalization},
+  author={Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li},
+  journal={International Conference on Learning Representation (ICLR)},
+  year={2019}
 }
 ```
 

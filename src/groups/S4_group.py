@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import time
+import logging
 
 import numpy as np
 
@@ -12,9 +13,9 @@ import torchvision.transforms.functional as torchtransforms
 
 class S4_group(object):
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.group_dim = 24
         self.cayleytable = self.get_cayleytable()
-
 
     def get_Grotations(self, x):
         """Rotate the tensor x with all 24 S4 rotations
@@ -100,6 +101,7 @@ class S4_group(object):
         Returns:
             4 by 4 numpy array
         """
+        self.logger.debug("Computing Cayley table for S4 group")
         Z = self.get_s4mat()
         cayley = []
         for y in Z:

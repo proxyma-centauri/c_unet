@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import logging
 
 import numpy as np
 
@@ -12,7 +13,7 @@ class V_group(object):
     def __init__(self):
         self.group_dim = 4
         self.cayleytable = self.get_cayleytable()
-
+        self.logger = logging.getLogger(__name__)
 
     def get_cayleytable(self):
         """Returns the Cayley table of V group
@@ -20,7 +21,7 @@ class V_group(object):
         Returns:
             4 by 4 numpy array
         """
-        print("...Computing Cayley table")
+        self.logger.debug("Computing Cayley table for V group")
         cayley = np.asarray([[0,1,2,3],
                              [1,0,3,2],
                              [2,3,0,1],
