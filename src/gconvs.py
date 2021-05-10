@@ -193,7 +193,7 @@ class GconvBlock(nn.Module):
         if normalization:
             if normalization == "bn":
                 other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
-            if normalization == "sn":
+            elif normalization == "sn":
                 other_modules.append(ReshapedSwitchNorm(out_channels, group_dim))
             else:
                 raise ValueError(

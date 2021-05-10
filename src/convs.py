@@ -52,7 +52,7 @@ class ConvBlock(nn.Module):
         if normalization:
             if normalization == "bn":
                 modules.append(nn.BatchNorm3d(out_channels))
-            if normalization == "sn":
+            elif normalization == "sn":
                 modules.append(SwitchNorm3d(out_channels))
             else:
                 raise ValueError(
