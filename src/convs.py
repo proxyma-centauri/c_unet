@@ -9,6 +9,7 @@ from torch.autograd import Variable
 from typing import List, Optional, Union
 
 from src.utils.helpers.helpers import conv3d
+from src.utils.normalization.SwitchNorm3d import SwitchNorm3d
 
 class ConvBlock(nn.Module):
     """Applies a 3D convolution with optional normalization and nonlinearity steps block
@@ -51,6 +52,8 @@ class ConvBlock(nn.Module):
         if normalization:
             if normalization == "bn":
                 modules.append(nn.BatchNorm3d(out_channels))
+            if normalization == "sn":
+                modules.append(SwitchNorm3d(out_channels))
             else:
                 raise ValueError(
                     f"Invalid normalization value: {normalization}")

@@ -10,6 +10,7 @@ from typing import List, Optional, Union
 
 from src.utils.dropout.GaussianDropout import GaussianDropout
 from src.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
+from src.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
 from src.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
 
 class Gconv3d(nn.Module):
@@ -192,6 +193,8 @@ class GconvBlock(nn.Module):
         if normalization:
             if normalization == "bn":
                 other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
+            if normalization == "sn":
+                other_modules.append(ReshapedSwitchNorm(out_channels, group_dim))
             else:
                 raise ValueError(
                     f"Invalid normalization value: {normalization}")
