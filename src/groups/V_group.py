@@ -12,8 +12,8 @@ import torchvision.transforms.functional as torchtransforms
 class V_group(object):
     def __init__(self):
         self.group_dim = 4
-        self.cayleytable = self.get_cayleytable()
         self.logger = logging.getLogger(__name__)
+        self.cayleytable = self.get_cayleytable()
 
     def get_cayleytable(self):
         """Returns the Cayley table of V group
