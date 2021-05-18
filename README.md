@@ -110,6 +110,9 @@ The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchN
 }
 ```
 
+Some of code in `./src/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
+
+
 # License
 
 **TODO**
