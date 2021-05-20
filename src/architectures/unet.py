@@ -12,7 +12,7 @@ class Unet(nn.Module):
 
     def __init__(self,
                 # Group arguments
-                group: str,
+                group: Union[str, None],
                 group_dim: int,
                 # Channels arguments
                 in_channels: int,
@@ -45,9 +45,7 @@ class Unet(nn.Module):
         super(Unet, self).__init__()
 
         self.logger = logging.getLogger(__name__)
-        self.encoder = EncoderBlock(group=group,
-                                    group_dim=group_dim,
-                                    in_channels=in_channels, 
+        self.encoder = EncoderBlock(in_channels=in_channels, 
                                     kernel_size=kernel_size,
                                     stride=stride,
                                     padding=padding,
@@ -60,10 +58,11 @@ class Unet(nn.Module):
                                     normalization=normalization,
                                     model_depth=model_depth,
                                     root_feat_maps=root_feat_maps,
-                                    num_conv_blocks=num_conv_blocks)
-        self.decoder = DecoderBlock(group=group,
-                                    group_dim=group_dim,
-                                    out_channels=out_channels, 
+                                    num_conv_blocks=num_conv_blocks,
+                                    group=group,
+                                    group_dim=group_dim)
+
+        self.decoder = DecoderBlock(out_channels=out_channels, 
                                     kernel_size=kernel_size,
                                     stride=stride,
                                     padding=padding,
@@ -76,8 +75,10 @@ class Unet(nn.Module):
                                     nonlinearity=nonlinearity,
                                     normalization=normalization,
                                     model_depth=model_depth,
-                                    num_feat_maps=root_feat_maps,
-                                    num_conv_blocks=num_conv_blocks)
+                                    num_feat_maps=num_feat_maps,
+                                    num_conv_blocks=num_conv_blocks,
+                                    group=group,
+                                    group_dim=group_dim,)
 
         # TODO : make this group compatible
         if final_activation == "sigmoid":
@@ -89,5 +90,5 @@ class Unet(nn.Module):
         x, downsampling_features = self.encoder(x)
         x = self.decoder(x, downsampling_features)
         x = self.sigmoid(x)
-        self.logger.debug("Final output shape: ", x.shape)
+        self.logger.debug(f"Final output shape: {x.shape}")
         return x

@@ -8,9 +8,7 @@ from src.layers.convs import ConvBlock
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, 
-                group: str,
-                group_dim: int,
+    def __init__(self,
                 # Channels
                 out_channels: int, 
                 # Kernel arguments
@@ -30,7 +28,10 @@ class DecoderBlock(nn.Module):
                 # Model arguments
                 model_depth: int=4,
                 num_feat_maps: int = 16,
-                num_conv_blocks: int = 2):
+                num_conv_blocks: int = 2,
+                # Group arguments (by default, no group)
+                group: Union[str, None]=None,
+                group_dim: int=0):
         super(DecoderBlock, self).__init__()
 
         self.num_feat_maps = num_feat_maps
@@ -83,7 +84,15 @@ class DecoderBlock(nn.Module):
 
             if depth == 0:
                 in_channels = feat_map_channels * 2
-                self.final_conv = ConvBlock(in_channels=in_channels, out_channels=out_channels)
+                self.final_conv = ConvBlock(in_channels,
+                                        out_channels,
+                                        kernel_size,
+                                        stride,
+                                        padding,
+                                        bias,
+                                        dilation,
+                                        nonlinearity,
+                                        normalization)
                 self.module_dict["final_conv"] = self.final_conv
 
     def forward(self, x, down_sampling_features):

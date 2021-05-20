@@ -31,9 +31,6 @@ class EncoderBlock(nn.Module):
         ValueError: Invalid nonlinearity value
     """
     def __init__(self, 
-                # Group arguments
-                group: str,
-                group_dim: int,
                 # Channels
                 in_channels: int, 
                 # Kernel arguments
@@ -52,7 +49,10 @@ class EncoderBlock(nn.Module):
                 # Model
                 model_depth: int=4,
                 root_feat_maps: int = 16,
-                num_conv_blocks: int = 2):
+                num_conv_blocks: int = 2,
+                # Group arguments (by default, no group)
+                group: Union[str, None]=None,
+                group_dim: int=0):
         super(EncoderBlock, self).__init__()
 
         self.root_feat_maps = root_feat_maps
@@ -90,11 +90,11 @@ class EncoderBlock(nn.Module):
         for key, layer in self.module_dict.items():
             if key.startswith("conv"):
                 x = layer(x)
-                self.logger.debug(key, x.shape)
+                self.logger.debug(f"{key}, {x.shape}")
                 if key.endswith("1"):
                     down_sampling_features.append(x)
             elif key.startswith("max_pooling"):
                 x = layer(x)
-                self.logger.debug(key, x.shape)
+                self.logger.debug(f"{key}, {x.shape}")
 
         return x, down_sampling_features
