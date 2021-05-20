@@ -8,20 +8,32 @@ from src.layers.convs import ConvBlock
 
 class DecoderBlock(nn.Module):
     def __init__(self, 
+                group: str,
+                group_dim: int,
+                # Channels
                 out_channels: int, 
+                # Kernel arguments
                 kernel_size: int = 3,
-                model_depth: int=4,
-                pool_size: int=2,
-                stride: Union[int, List[int]] = 1,
                 padding: Union[str, int] = 1,
+                stride: Union[int, List[int]] = 1,
+                # Transpose convolution
+                tconv_size: int=3,
+                tconv_stride: Union[int, List[int]] = 2,
+                tconv_padding: Union[str, int] = 1,
+                output_padding: Union[str, int] = 1,
+                # Convolution arguments
                 bias: bool = True,
                 dilation: int = 1,
                 nonlinearity: Optional[str] = "relu",
-                normalization: Optional[str] = "bn"):
+                normalization: Optional[str] = "bn",
+                # Model arguments
+                model_depth: int=4,
+                num_feat_maps: int = 16,
+                num_conv_blocks: int = 2):
         super(DecoderBlock, self).__init__()
 
-        self.num_conv_blocks = 2
-        self.num_feat_maps = 16
+        self.num_feat_maps = num_feat_maps
+        self.num_conv_blocks = num_conv_blocks
 
         self.module_dict = nn.ModuleDict()
 
@@ -29,7 +41,16 @@ class DecoderBlock(nn.Module):
             feat_map_channels = 2 ** (depth + 1) * self.num_feat_maps
 
             # TODO : see how and if to adapt ConvTranspose3d to G-conv
-            self.deconv = nn.ConvTranspose3d(in_channels=feat_map_channels * 4, out_channels=feat_map_channels * 4)
+            # TODO : see how to ajust kernel size, stride, etc to more situations while always allowing concatenations
+            # TODO : check output_padding vs stride
+            in_channels, out_channels = feat_map_channels * 4, feat_map_channels * 4
+            self.deconv = nn.ConvTranspose3d(
+                                            in_channels, 
+                                            out_channels, 
+                                            tconv_size,
+                                            tconv_stride,
+                                            tconv_padding,
+                                            output_padding=output_padding)
             self.module_dict[f"deconv_{depth}"] = self.deconv
 
             for conv_nb in range(self.num_conv_blocks):
@@ -73,8 +94,6 @@ class DecoderBlock(nn.Module):
             if key.startswith("deconv"):
                 x = layer(x)
                 x = torch.cat((down_sampling_features[int(key[-1])], x), dim=1)
-            elif key.startswith("conv"):
-                x = layer(x)
             else:
                 x = layer(x)
         return x
