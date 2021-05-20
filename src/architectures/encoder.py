@@ -1,5 +1,6 @@
-import torch.nn as nn
+import logging
 from typing import List, Optional, Union
+import torch.nn as nn
 
 from src.layers.gconvs import GconvResBlock, GconvBlock
 from src.layers.convs import ConvBlock
@@ -56,13 +57,14 @@ class EncoderBlock(nn.Module):
 
         self.root_feat_maps = root_feat_maps
         self.num_conv_blocks =num_conv_blocks
+        self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
 
         for depth in range(model_depth):
             feat_map_channels = 2 ** (depth + 1) * self.root_feat_maps
 
-            for i in range(self.num_conv_blocks):
+            for conv_nb in range(self.num_conv_blocks):
                 self.conv_block = ConvBlock(in_channels,
                                             feat_map_channels,
                                             kernel_size,
@@ -72,7 +74,7 @@ class EncoderBlock(nn.Module):
                                             dilation,
                                             nonlinearity,
                                             normalization)
-                self.module_dict[f"conv_{depth}_{i}"] = self.conv_block
+                self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv_block
 
                 in_channels, feat_map_channels = feat_map_channels, feat_map_channels * 2
 
@@ -81,18 +83,18 @@ class EncoderBlock(nn.Module):
             else:
                 # TODO : Avg pool ou max pool ?
                 self.pooling = nn.MaxPool3d(kernel_size=pool_size, stride=pool_stride, padding=pool_padding)
-                self.module_dict["max_pooling_{}".format(depth)] = self.pooling
+                self.module_dict[f"max_pooling_{depth}"] = self.pooling
 
     def forward(self, x):
         down_sampling_features = []
         for key, layer in self.module_dict.items():
             if key.startswith("conv"):
                 x = layer(x)
-                print(key, x.shape)
+                self.logger.debug(key, x.shape)
                 if key.endswith("1"):
                     down_sampling_features.append(x)
             elif key.startswith("max_pooling"):
                 x = layer(x)
-                print(key, x.shape)
+                self.logger.debug(key, x.shape)
 
         return x, down_sampling_features

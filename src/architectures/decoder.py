@@ -1,3 +1,4 @@
+import logging
 import torch
 import torch.nn as nn
 from typing import List, Optional, Union
@@ -34,6 +35,7 @@ class DecoderBlock(nn.Module):
 
         self.num_feat_maps = num_feat_maps
         self.num_conv_blocks = num_conv_blocks
+        self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
 

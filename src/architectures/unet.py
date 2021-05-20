@@ -1,5 +1,7 @@
-import torch.nn as nn
+import logging
 from typing import List, Optional, Union
+
+import torch.nn as nn
 
 from src.layers.gconvs import GconvResBlock, GconvBlock
 from src.layers.convs import ConvBlock
@@ -42,6 +44,7 @@ class Unet(nn.Module):
                 final_activation="sigmoid"):
         super(Unet, self).__init__()
 
+        self.logger = logging.getLogger(__name__)
         self.encoder = EncoderBlock(group=group,
                                     group_dim=group_dim,
                                     in_channels=in_channels, 
@@ -86,5 +89,5 @@ class Unet(nn.Module):
         x, downsampling_features = self.encoder(x)
         x = self.decoder(x, downsampling_features)
         x = self.sigmoid(x)
-        print("Final output shape: ", x.shape)
+        self.logger.debug("Final output shape: ", x.shape)
         return x
