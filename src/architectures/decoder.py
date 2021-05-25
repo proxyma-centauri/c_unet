@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 from typing import List, Optional, Union
 
+from src.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
+from src.utils.interpolation.Interpolate import Interpolate
+
 from src.layers.gconvs import GconvResBlock, GconvBlock
 from src.layers.convs import ConvBlock
 
@@ -16,7 +19,7 @@ class DecoderBlock(nn.Module):
                 padding: Union[str, int] = 1,
                 stride: Union[int, List[int]] = 1,
                 # Transpose convolution
-                tconv_size: int=3,
+                tconv_kernel_size: int=3,
                 tconv_stride: Union[int, List[int]] = 2,
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1,
@@ -49,17 +52,24 @@ class DecoderBlock(nn.Module):
             in_channels, inter_channels = feat_map_channels * 4, feat_map_channels * 4
 
             if group:
-            # TODO : see how and if to adapt ConvTranspose3d to G-conv
-                pass
-            else:
-                self.deconv = nn.ConvTranspose3d(
-                                            in_channels, 
-                                            inter_channels, 
-                                            tconv_size,
+                self.upsample = ReshapedInterpolate(dilation,
+                                            tconv_kernel_size,
                                             tconv_stride,
                                             tconv_padding,
-                                            output_padding=output_padding)
-            self.module_dict[f"deconv_{depth}"] = self.deconv
+                                            output_padding)
+            else:
+                self.upsample = Interpolate(dilation,
+                                        tconv_kernel_size,
+                                        tconv_stride,
+                                        tconv_padding,
+                                        output_padding)
+                # self.upsample = nn.ConvTranspose3d(in_channels,
+                #                                 inter_channels,
+                #                                 tconv_kernel_size,
+                #                                 tconv_stride,
+                #                                 tconv_padding,
+                #                                 output_padding=output_padding)
+            self.module_dict[f"upsample_{depth}"] = self.upsample
 
             for conv_nb in range(self.num_conv_blocks):
 
@@ -70,7 +80,7 @@ class DecoderBlock(nn.Module):
 
                 in_channels, inter_channels = feat_map_channels * multiplier, feat_map_channels * 2
                 if group:
-                    self.conv_block = GconvBlock(group,
+                    self.conv = GconvBlock(group,
                                         group_dim,
                                         in_channels,
                                         inter_channels,
@@ -128,7 +138,7 @@ class DecoderBlock(nn.Module):
         :return: output
         """
         for key, layer in self.module_dict.items():
-            if key.startswith("deconv"):
+            if key.startswith("upsample"):
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
                 x = torch.cat((down_sampling_features[int(key[-1])], x), dim=1)

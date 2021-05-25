@@ -23,7 +23,7 @@ class Unet(nn.Module):
                 pool_stride: Union[int, List[int]] = 2,
                 pool_padding: Union[str, int] = 0,
                 # Transpose convolutions arguments
-                tconv_size: int=3,
+                tconv_kernel_size: int=3,
                 tconv_stride: Union[int, List[int]] = 2,
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1,
@@ -68,7 +68,7 @@ class Unet(nn.Module):
                                     kernel_size=kernel_size,
                                     stride=stride,
                                     padding=padding,
-                                    tconv_size=tconv_size,
+                                    tconv_kernel_size=tconv_kernel_size,
                                     tconv_stride=tconv_stride,
                                     tconv_padding=tconv_padding,
                                     output_padding=output_padding,
