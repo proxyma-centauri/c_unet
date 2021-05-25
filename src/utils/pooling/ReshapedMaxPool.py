@@ -1,9 +1,11 @@
+import logging
+
 from torch import nn
 from typing import List, Union
 
 
 class ReshapedMaxPool(nn.Module):
-    """ Performs AveragePooling through MaxPool3d,
+    """ Performs MaxPooling through MaxPool3d,
         after having reshaped the data into a 5d Tensor"""
 
     def __init__(self,
@@ -12,6 +14,7 @@ class ReshapedMaxPool(nn.Module):
                 padding: Union[str, int] = 1):
 
         super(ReshapedMaxPool, self).__init__()
+        self.logger = logging.getLogger(__name__)
         self.MaxPool = nn.MaxPool3d(kernel_size, 
                     stride, 
                     padding
@@ -20,5 +23,9 @@ class ReshapedMaxPool(nn.Module):
     def forward(self, x):
         bs, c, g, h, w, d = x.shape
         x = x.reshape([bs, c * g, h, w, d])
-        x = (self.MaxPool(x)).view([bs, c, g, h, w, d])
+        x = self.MaxPool(x)
+
+        # New shape
+        _, _, new_h, new_w, new_d = x.shape
+        x = x.view([bs, c, g, new_h, new_w, new_d])
         return x

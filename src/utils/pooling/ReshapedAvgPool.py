@@ -20,5 +20,9 @@ class ReshapedAvgPool(nn.Module):
     def forward(self, x):
         bs, c, g, h, w, d = x.shape
         x = x.reshape([bs, c * g, h, w, d])
-        x = (self.AvgPool(x)).view([bs, c, g, h, w, d])
+        x = self.AvgPool(x)
+        
+        # New shape
+        _, _, new_h, new_w, new_d = x.shape
+        x = x.view([bs, c, g, new_h, new_w, new_d])
         return x
