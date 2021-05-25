@@ -15,6 +15,16 @@ def calc_same_padding(
         return (dilation * (kernel - 1) + 1) // 2, input_ // stride
 
 
+def calc_upsampling_size(
+    input_size: int,
+    dilation: int = 1,
+    tconv_kernel_size: int=3,
+    tconv_stride: int = 2,
+    tconv_padding: int = 1,
+    output_padding: int = 1) -> int:
+    return (input_size - 1)*tconv_stride - 2*tconv_padding + dilation*(tconv_kernel_size - 1) + output_padding + 1
+
+
 def conv3d(in_channels: int,
            out_channels: int,
            kernel_size: int = 3,
