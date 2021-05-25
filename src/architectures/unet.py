@@ -28,6 +28,7 @@ class Unet(nn.Module):
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1,
                 # Convolutional arguments
+                dropout: Optional[bool] = 0.1,
                 stride: Union[int, List[int]] = 1,
                 padding: Union[str, int] = 1,
                 kernel_size: int = 3,
@@ -52,6 +53,7 @@ class Unet(nn.Module):
                                     pool_size=pool_size,
                                     pool_stride=pool_stride,
                                     pool_padding=pool_padding,
+                                    dropout=dropout,
                                     bias=bias,
                                     dilation=dilation,
                                     nonlinearity=nonlinearity,
@@ -70,6 +72,7 @@ class Unet(nn.Module):
                                     tconv_stride=tconv_stride,
                                     tconv_padding=tconv_padding,
                                     output_padding=output_padding,
+                                    dropout=dropout,
                                     bias=bias,
                                     dilation=dilation,
                                     nonlinearity=nonlinearity,

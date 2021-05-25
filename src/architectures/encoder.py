@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from src.layers.gconvs import GconvResBlock, GconvBlock
 from src.layers.convs import ConvBlock
+from src.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
 class EncoderBlock(nn.Module):
@@ -42,6 +43,7 @@ class EncoderBlock(nn.Module):
                 pool_stride: Union[int, List[int]] = 2,
                 pool_padding: Union[str, int] = 0,
                 # Convolution arguments
+                dropout: Optional[bool] = 0.1,
                 bias: bool = True,
                 dilation: int = 1,
                 nonlinearity: Optional[str] = "relu",
@@ -65,7 +67,22 @@ class EncoderBlock(nn.Module):
             feat_map_channels = 2 ** (depth + 1) * self.root_feat_maps
 
             for conv_nb in range(self.num_conv_blocks):
-                self.conv_block = ConvBlock(in_channels,
+                if group:
+                    expected_group_dim = 1 if (depth == 0 and conv_nb == 0) else group_dim
+                    self.conv_block = GconvBlock(group,
+                                            expected_group_dim,
+                                            in_channels,
+                                            feat_map_channels,
+                                            kernel_size,
+                                            stride,
+                                            padding,
+                                            dilation,
+                                            dropout,
+                                            bias,
+                                            nonlinearity,
+                                            normalization)
+                else: # TODO check order of arguments
+                    self.conv_block = ConvBlock(in_channels,
                                             feat_map_channels,
                                             kernel_size,
                                             stride,
@@ -81,8 +98,11 @@ class EncoderBlock(nn.Module):
             if depth == model_depth - 1:
                 break
             else:
-                # TODO : Avg pool ou max pool ?
-                self.pooling = nn.MaxPool3d(kernel_size=pool_size, stride=pool_stride, padding=pool_padding)
+                if group:
+                    self.pooling = ReshapedMaxPool(kernel_size=pool_size, stride=pool_stride, padding=pool_padding)
+                else:
+                    self.pooling = nn.MaxPool3d(kernel_size=pool_size, stride=pool_stride, padding=pool_padding)
+                
                 self.module_dict[f"max_pooling_{depth}"] = self.pooling
 
     def forward(self, x):

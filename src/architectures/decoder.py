@@ -21,6 +21,7 @@ class DecoderBlock(nn.Module):
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1,
                 # Convolution arguments
+                dropout: Optional[bool] = 0.1,
                 bias: bool = True,
                 dilation: int = 1,
                 nonlinearity: Optional[str] = "relu",
@@ -43,13 +44,17 @@ class DecoderBlock(nn.Module):
         for depth in range(model_depth - 2, -1, -1):
             feat_map_channels = 2 ** (depth + 1) * self.num_feat_maps
 
-            # TODO : see how and if to adapt ConvTranspose3d to G-conv
             # TODO : see how to ajust kernel size, stride, etc to more situations while always allowing concatenations
             # TODO : check output_padding vs stride
-            in_channels, out_channels = feat_map_channels * 4, feat_map_channels * 4
-            self.deconv = nn.ConvTranspose3d(
+            in_channels, inter_channels = feat_map_channels * 4, feat_map_channels * 4
+
+            if group:
+            # TODO : see how and if to adapt ConvTranspose3d to G-conv
+                pass
+            else:
+                self.deconv = nn.ConvTranspose3d(
                                             in_channels, 
-                                            out_channels, 
+                                            inter_channels, 
                                             tconv_size,
                                             tconv_stride,
                                             tconv_padding,
@@ -57,34 +62,55 @@ class DecoderBlock(nn.Module):
             self.module_dict[f"deconv_{depth}"] = self.deconv
 
             for conv_nb in range(self.num_conv_blocks):
+
+                # Multiplier factor for channels
+                multiplier = 2
                 if conv_nb == 0:
-                    in_channels, out_channels = feat_map_channels * 6, feat_map_channels * 2
-                    self.conv = ConvBlock(in_channels,
-                                        out_channels,
+                    multiplier = 6
+
+                in_channels, inter_channels = feat_map_channels * multiplier, feat_map_channels * 2
+                if group:
+                    self.conv_block = GconvBlock(group,
+                                        group_dim,
+                                        in_channels,
+                                        inter_channels,
                                         kernel_size,
                                         stride,
                                         padding,
-                                        bias,
                                         dilation,
+                                        dropout,
+                                        bias,
                                         nonlinearity,
                                         normalization)
-                    self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv
                 else:
-                    in_channels, out_channels = feat_map_channels * 2, feat_map_channels * 2
                     self.conv = ConvBlock(in_channels,
-                                        out_channels,
-                                        kernel_size,
-                                        stride,
-                                        padding,
-                                        bias,
-                                        dilation,
-                                        nonlinearity,
-                                        normalization)
-                    self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv
+                                    inter_channels,
+                                    kernel_size,
+                                    stride,
+                                    padding,
+                                    bias,
+                                    dilation,
+                                    nonlinearity,
+                                    normalization)
+                self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv
 
             if depth == 0:
                 in_channels = feat_map_channels * 2
-                self.final_conv = ConvBlock(in_channels,
+                if group:
+                    self.final_conv = GconvBlock(group,
+                                        group_dim,
+                                        in_channels,
+                                        out_channels,
+                                        kernel_size,
+                                        stride,
+                                        padding,
+                                        dilation,
+                                        dropout,
+                                        bias,
+                                        nonlinearity,
+                                        normalization)
+                else:
+                    self.final_conv = ConvBlock(in_channels,
                                         out_channels,
                                         kernel_size,
                                         stride,
@@ -104,7 +130,9 @@ class DecoderBlock(nn.Module):
         for key, layer in self.module_dict.items():
             if key.startswith("deconv"):
                 x = layer(x)
+                self.logger.debug(f"{key}, {x.shape}")
                 x = torch.cat((down_sampling_features[int(key[-1])], x), dim=1)
             else:
                 x = layer(x)
+                self.logger.debug(f"{key}, {x.shape}")
         return x
