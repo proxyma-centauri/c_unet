@@ -21,7 +21,6 @@ class V_group(object):
         Returns:
             4 by 4 numpy array
         """
-        self.logger.debug("Computing Cayley table for V group")
         cayley = np.asarray([[0,1,2,3],
                              [1,0,3,2],
                              [2,3,0,1],

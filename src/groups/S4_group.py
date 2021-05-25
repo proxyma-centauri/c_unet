@@ -101,7 +101,6 @@ class S4_group(object):
         Returns:
             4 by 4 numpy array
         """
-        self.logger.debug("Computing Cayley table for S4 group")
         Z = self.get_s4mat()
         cayley = []
         for y in Z:

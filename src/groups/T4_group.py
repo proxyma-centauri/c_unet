@@ -148,7 +148,6 @@ class T4_group(object):
         Returns:
             4 by 4 numpy array
         """
-        self.logger.debug("Computing Cayley table for T4 group")
         Z = self.get_t4mat()
         cayley = []
         for y in Z:
