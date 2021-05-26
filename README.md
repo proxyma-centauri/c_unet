@@ -21,7 +21,7 @@ The following packages are prerequisites:
 ### Setting up the environment
 
 ```sh
-source PATH_TO_CONDA/bin/activate"
+source PATH_TO_CONDA/bin/activate
 ```
 
 Copy the `environment.yml.template` file, and nmae the copy `environment.yml`. You can edit `NAME_OF_ENV` to name the conda environment about to be created. The execute the following command to create the environment with the required packages installed
@@ -51,24 +51,36 @@ mkdir logs
 ```sh
 .
 ├── environment.yml.template
+├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── logs # logging directory created during install
 └── src
-    ├── convs.py
-    ├── gconvs.py
+    ├── architectures # Models
+    │   ├── __init__.py
+    │   ├── decoder.py
+    │   ├── encoder.py
+    │   └── unet.py
     ├── groups # Groups definition
     │   ├── __init__.py
     │   ├── S4_group.py
     │   ├── T4_group.py
     │   └── V_group.py
     ├── __init__.py
+    ├── layers # (Group) Convolution layers definition
+    │   ├── __init__.py
+    │   ├── convs.py
+    │   └── gconvs.py
     └── utils
         ├── dropout # Custom dropout layers
         │   ├── GaussianDropout.py
         │   └── __init__.py
         ├── helpers # Helper functions
         │   ├── helpers.py
+        │   └── __init__.py
+        ├── interpolation # Interpolation (upsampling) layers
+        │   ├── Interpolate.py
+        │   ├── ReshapedInterpolate.py
         │   └── __init__.py
         ├── __init__.py
         ├── logging # Logging definition module
@@ -77,10 +89,13 @@ mkdir logs
         │   └── __init__.py
         ├── normalization # Custom normalization layers
         │   ├── __init__.py
-        │   └── ReshapedBatchNorm.py
+        │   ├── ReshapedBatchNorm.py
+        │   ├── ReshapedSwitchNorm.py
+        │   └── SwitchNorm3d.py
         └── pooling # Custom pooling layers
             ├── __init__.py
-            └── ReshapedAvgPool.py
+            ├── ReshapedAvgPool.py
+            └── ReshapedMaxPool.py
 ```
 
 
@@ -110,7 +125,7 @@ The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchN
 }
 ```
 
-Some of code in `./src/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
+Some of the code in `./src/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
 
 
 # License
