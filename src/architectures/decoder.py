@@ -11,6 +11,37 @@ from src.layers.convs import ConvBlock
 
 
 class DecoderBlock(nn.Module):
+    """Encoding path of a U-Net architecture
+
+    Args:
+        - out_channels (int): Number of output channels   
+
+        - kernel_size (int): Size of the kernel. Defaults to 3.
+        - stride (Union[int, List[int]]): Stride of the convolution. Defaults to 1.
+        - padding (Union[str, int]): Zero-padding added to all three sides of the input. Defaults to 1.
+
+        - tconv_kernel_size (int): Size of the kernel. Defaults to 3.
+        - tconv_stride (Union[int, List[int]]): Stride of the upsampling. Defaults to 2.
+        - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at upsampling. Defaults to 1.
+        - output_padding (Union[str, int]): Additional size added to one side of each dimension in the output shape. Defaults to 1.
+
+        - dropout (float, optional) : Value of dropout to use. Defaults to 0.1
+        - bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
+        - dilation (int, optional): Spacing between kernel elements. Defaults to 1.
+        - nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
+        - normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
+
+        - model_depth (int): Depth of the encoding path. Defaults to 4.
+        - num_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
+        - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
+
+        - group (str): Shorthand name representing the group to use
+        - group_dim (int): Group dimension
+
+    Raises:
+        ValueError: Invalid normalization value
+        ValueError: Invalid nonlinearity value
+    """
     def __init__(self,
                 # Channels
                 out_channels: int, 

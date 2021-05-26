@@ -8,24 +8,31 @@ from src.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
 class EncoderBlock(nn.Module):
-    """Encoding way of a U-Net architecture
+    """Encoding path of a U-Net architecture
 
     Args:
-        group (str): Shorthand name representing the group to use
-        group_dim (int): Group dimension, it is 
-            equal to the group dimension
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        is_first_conv (bool) : Boolean indicating whether the first convolution 
-            of the residual block should have an expected_group_dim of 1.
-        kernel_size (int): Size of the kernel. Defaults to 3.
-        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
-        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
-        bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
-        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
-        dropout (float, optional) : Value of dropout to use. Defaults to 0.1
-        nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
-        normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
+        - in_channels (int): Number of input channels   
+
+        - kernel_size (int): Size of the kernel. Defaults to 3.
+        - stride (Union[int, List[int]]): Stride of the convolution. Defaults to 1.
+        - padding (Union[str, int]): Zero-padding added to all three sides of the input. Defaults to 1.
+
+        - pool_size (int): Size of the pooling kernel. Defaults to 2.
+        - pool_stride (Union[int, List[int]]): Stride of the pooling. Defaults to 2.
+        - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at pooling. Defaults to 0.
+
+        - dropout (float, optional) : Value of dropout to use. Defaults to 0.1
+        - bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
+        - dilation (int, optional): Spacing between kernel elements. Defaults to 1.
+        - nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
+        - normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
+
+        - model_depth (int): Depth of the encoding path. Defaults to 4.
+        - root_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
+        - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
+
+        - group (str): Shorthand name representing the group to use
+        - group_dim (int): Group dimension
 
     Raises:
         ValueError: Invalid normalization value
