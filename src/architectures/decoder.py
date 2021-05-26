@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 from src.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
 from src.utils.interpolation.Interpolate import Interpolate
 
-from src.layers.gconvs import GconvResBlock, GconvBlock
+from src.layers.gconvs import GconvResBlock, GconvBlock, FinalGroupConvolution
 from src.layers.convs import ConvBlock
 
 
@@ -133,7 +133,7 @@ class DecoderBlock(nn.Module):
             if depth == 0:
                 in_channels = feat_map_channels * 2
                 if group:
-                    self.final_conv = GconvBlock(group,
+                    group_final_conv = GconvBlock(group,
                                         group_dim,
                                         in_channels,
                                         out_channels,
@@ -145,6 +145,9 @@ class DecoderBlock(nn.Module):
                                         bias,
                                         nonlinearity,
                                         normalization)
+                    self.final_conv = FinalGroupConvolution(group_final_conv,
+                                                    group_dim,
+                                                    out_channels)
                 else:
                     self.final_conv = ConvBlock(in_channels,
                                         out_channels,
