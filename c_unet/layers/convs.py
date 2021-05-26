@@ -1,11 +1,5 @@
 
-import numpy as np
-
-import torch
-import torch.nn.functional as F
-
 from torch import nn
-from torch.autograd import Variable
 from typing import List, Optional, Union
 
 from c_unet.utils.helpers.helpers import conv3d

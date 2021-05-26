@@ -4,7 +4,6 @@ from torch import nn
 from torch.nn import functional as F
 from typing import List, Union, Optional
 
-from c_unet.utils.helpers.helpers import calc_upsampling_size
 from c_unet.utils.interpolation.Interpolate import Interpolate
 
 

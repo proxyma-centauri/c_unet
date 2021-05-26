@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 from c_unet.utils.normalization.SwitchNorm3d import SwitchNorm3d
 
