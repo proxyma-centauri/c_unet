@@ -203,6 +203,10 @@ class GconvBlock(nn.Module):
         if nonlinearity:
             if nonlinearity == "relu":
                 other_modules.append(nn.ReLU(inplace=True))
+            elif nonlinearity == "sigmoid":
+                other_modules.append(nn.Sigmoid())
+            elif nonlinearity == "softmax":
+                other_modules.append(nn.Softmax(dim=1))
             else:
                 raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
 
@@ -312,13 +316,14 @@ class FinalGroupConvolution(nn.Module):
     def __init__(self,
                 group_convolution: nn.Module,
                 group_dim: int,
-                out_channels: int):
+                out_channels: int,
+                final_activation: str):
         super(FinalGroupConvolution, self).__init__()
 
         self.g_conv = group_convolution
         self.reshaping_conv = ConvBlock(out_channels*group_dim,
                                     out_channels,
-                                    nonlinearity="",
+                                    nonlinearity=final_activation,
                                     normalization="")
 
     def forward(self, x):

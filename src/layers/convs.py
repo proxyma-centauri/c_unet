@@ -61,6 +61,10 @@ class ConvBlock(nn.Module):
         if nonlinearity:
             if nonlinearity == "relu":
                 modules.append(nn.ReLU(inplace=True))
+            elif nonlinearity == "sigmoid":
+                modules.append(nn.Sigmoid())
+            elif nonlinearity == "softmax":
+                modules.append(nn.Softmax(dim=1))
             else:
                 raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
 

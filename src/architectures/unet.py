@@ -45,7 +45,6 @@ class Unet(nn.Module):
     Raises:
         ValueError: Invalid normalization value
         ValueError: Invalid nonlinearity value
-        ValueError: Invalid final activation value
     """
 
     def __init__(self,
@@ -79,7 +78,7 @@ class Unet(nn.Module):
                 root_feat_maps: int = 16,
                 num_feat_maps: int = 16,
                 num_conv_blocks: int = 2,
-                final_activation="sigmoid"):
+                final_activation: str="sigmoid"):
         super(Unet, self).__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -117,22 +116,12 @@ class Unet(nn.Module):
                                     model_depth=model_depth,
                                     num_feat_maps=num_feat_maps,
                                     num_conv_blocks=num_conv_blocks,
+                                    final_activation=final_activation,
                                     group=group,
-                                    group_dim=group_dim,)
-
-
-        # Final activation
-        if final_activation == "sigmoid":
-            self.final_activation = nn.Sigmoid()
-        elif final_activation == "softmax":
-            self.final_activation = nn.Softmax(dim=1)
-        else:
-            raise ValueError(f"Invalid final activation value: {final_activation}")
-
+                                    group_dim=group_dim)
 
     def forward(self, x):
         x, downsampling_features = self.encoder(x)
         x = self.decoder(x, downsampling_features)
-        x = self.final_activation(x)
         self.logger.debug(f"Final output shape: {x.shape}")
         return x

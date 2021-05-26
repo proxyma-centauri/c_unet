@@ -34,6 +34,7 @@ class DecoderBlock(nn.Module):
         - model_depth (int): Depth of the encoding path. Defaults to 4.
         - num_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
         - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
+        - final_activation (str): Name of the final activation to use. Defaults to sigmoid.
 
         - group (str): Shorthand name representing the group to use
         - group_dim (int): Group dimension
@@ -64,6 +65,7 @@ class DecoderBlock(nn.Module):
                 model_depth: int=4,
                 num_feat_maps: int = 16,
                 num_conv_blocks: int = 2,
+                final_activation: str ="sigmoid",
                 # Group arguments (by default, no group)
                 group: Union[str, None]=None,
                 group_dim: int=0):
@@ -147,7 +149,8 @@ class DecoderBlock(nn.Module):
                                         normalization)
                     self.final_conv = FinalGroupConvolution(group_final_conv,
                                                     group_dim,
-                                                    out_channels)
+                                                    out_channels,
+                                                    final_activation)
                 else:
                     self.final_conv = ConvBlock(in_channels,
                                         out_channels,
@@ -156,7 +159,7 @@ class DecoderBlock(nn.Module):
                                         padding,
                                         bias,
                                         dilation,
-                                        nonlinearity,
+                                        final_activation,
                                         normalization)
                 self.module_dict["final_conv"] = self.final_conv
 
