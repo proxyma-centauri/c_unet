@@ -57,9 +57,9 @@ handlers:
 loggers:
   <module>:
     level: DEBUG
-    handlers: [console, info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
+    handlers: [info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
     propogate: no
 
 root:
   level: DEBUG
-  handlers: [console, info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
+  handlers: [info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
