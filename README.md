@@ -55,7 +55,7 @@ mkdir logs
 ├── LICENSE
 ├── README.md
 ├── logs # logging directory created during install
-└── src
+└── c_unet
     ├── architectures # Models
     │   ├── __init__.py
     │   ├── decoder.py
@@ -115,7 +115,7 @@ Part of this repository was taken from the [Cubenet repository](https://github.c
 }
 ```
 
-The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py), which corresponds to:
+The code in `./c_unet/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py), which corresponds to:
 ```
 @article{SwitchableNorm,
   title={Differentiable Learning-to-Normalize via Switchable Normalization},
@@ -125,7 +125,7 @@ The code in `./src/utils/normalization/SwitchNorm3d` was taken from the [SwitchN
 }
 ```
 
-Some of the code in `./src/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
+Some of the code in `./c_unet/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
 
 
 # License

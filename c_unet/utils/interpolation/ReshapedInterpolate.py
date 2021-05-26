@@ -4,8 +4,7 @@ from torch import nn
 from torch.nn import functional as F
 from typing import List, Union, Optional
 
-from src.utils.helpers.helpers import calc_upsampling_size
-from src.utils.interpolation.Interpolate import Interpolate
+from c_unet.utils.interpolation.Interpolate import Interpolate
 
 
 class ReshapedInterpolate(nn.Module):

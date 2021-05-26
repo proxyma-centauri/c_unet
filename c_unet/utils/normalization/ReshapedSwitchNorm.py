@@ -1,6 +1,5 @@
-import torch
 from torch import nn
-from src.utils.normalization.SwitchNorm3d import SwitchNorm3d
+from c_unet.utils.normalization.SwitchNorm3d import SwitchNorm3d
 
 class ReshapedSwitchNorm(nn.Module):
     """ Performs BatchNormalization through BatchNorm3d,

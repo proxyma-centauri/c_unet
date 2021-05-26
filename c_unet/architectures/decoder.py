@@ -3,11 +3,11 @@ import torch
 import torch.nn as nn
 from typing import List, Optional, Union
 
-from src.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
-from src.utils.interpolation.Interpolate import Interpolate
+from c_unet.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
+from c_unet.utils.interpolation.Interpolate import Interpolate
 
-from src.layers.gconvs import GconvResBlock, GconvBlock, FinalGroupConvolution
-from src.layers.convs import ConvBlock
+from c_unet.layers.gconvs import GconvResBlock, GconvBlock, FinalGroupConvolution
+from c_unet.layers.convs import ConvBlock
 
 
 class DecoderBlock(nn.Module):
