@@ -1,10 +1,8 @@
 import logging
-from typing import List, Optional, Union
-
 import torch.nn as nn
 
-from src.layers.gconvs import GconvResBlock, GconvBlock
-from src.layers.convs import ConvBlock
+from typing import List, Optional, Union
+
 from src.architectures.decoder import DecoderBlock
 from src.architectures.encoder import EncoderBlock
 
@@ -122,15 +120,19 @@ class Unet(nn.Module):
                                     group=group,
                                     group_dim=group_dim,)
 
-        # TODO : make this group compatible
+
+        # Final activation
         if final_activation == "sigmoid":
-            self.sigmoid = nn.Sigmoid()
+            self.final_activation = nn.Sigmoid()
+        elif final_activation == "softmax":
+            self.final_activation = nn.Softmax(dim=1)
         else:
-            self.softmax = nn.Softmax(dim=1)
+            raise ValueError(f"Invalid final activation value: {final_activation}")
+
 
     def forward(self, x):
         x, downsampling_features = self.encoder(x)
         x = self.decoder(x, downsampling_features)
-        x = self.sigmoid(x)
+        x = self.final_activation(x)
         self.logger.debug(f"Final output shape: {x.shape}")
         return x
