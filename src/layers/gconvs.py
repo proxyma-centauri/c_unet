@@ -5,13 +5,14 @@ import torch
 import torch.nn.functional as F
 
 from torch import nn
-from torch.autograd import Variable
 from typing import List, Optional, Union
 
 from src.utils.dropout.GaussianDropout import GaussianDropout
 from src.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
 from src.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
 from src.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
+
+from src.layers.convs import ConvBlock
 
 class Gconv3d(nn.Module):
     """Performs a discretized convolution on SO(3)
@@ -202,6 +203,10 @@ class GconvBlock(nn.Module):
         if nonlinearity:
             if nonlinearity == "relu":
                 other_modules.append(nn.ReLU(inplace=True))
+            elif nonlinearity == "sigmoid":
+                other_modules.append(nn.Sigmoid())
+            elif nonlinearity == "softmax":
+                other_modules.append(nn.Softmax(dim=1))
             else:
                 raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
 
@@ -303,3 +308,31 @@ class GconvResBlock(nn.Module):
         x = self.AvgPool(x)
 
         return x + y
+
+
+class FinalGroupConvolution(nn.Module):
+    """
+    """
+    def __init__(self,
+                group_convolution: nn.Module,
+                group_dim: int,
+                out_channels: int,
+                final_activation: str):
+        super(FinalGroupConvolution, self).__init__()
+
+        self.g_conv = group_convolution
+        self.reshaping_conv = ConvBlock(out_channels*group_dim,
+                                    out_channels,
+                                    nonlinearity=final_activation,
+                                    normalization="")
+
+    def forward(self, x):
+        x = self.g_conv(x)
+
+        # Reshaping input
+        bs, c, g, h, w, d = x.shape
+        x = x.reshape(bs, c*g, h, w, d)
+
+        # Removing group dimension
+        x = self.reshaping_conv(x)
+        return x
