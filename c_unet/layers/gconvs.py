@@ -47,6 +47,7 @@ class Gconv3d(nn.Module):
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
+        self.dilation = dilation
 
         if padding == "same":
             self.p = (dilation * (kernel_size - 1) + 1) // 2
@@ -124,7 +125,7 @@ class Gconv3d(nn.Module):
         WN = self.dropout(WN)
 
         # TODO: check if we really need padding like `reflect` or `valid`
-        x = F.conv3d(x, WN, stride=self.stride, padding=self.p)
+        x = F.conv3d(x, WN, stride=self.stride, padding=self.p, dilation=self.dilation)
         _, _, h, w, d = x.shape
         x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
 
