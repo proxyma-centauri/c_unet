@@ -3,8 +3,8 @@ import torch.nn as nn
 
 from typing import List, Optional, Union
 
-from src.architectures.decoder import DecoderBlock
-from src.architectures.encoder import EncoderBlock
+from c_unet.architectures.decoder import DecoderBlock
+from c_unet.architectures.encoder import EncoderBlock
 
 class Unet(nn.Module):
     """ U-net architecture, that can be used either with normal convolutions, or with group convolutions.

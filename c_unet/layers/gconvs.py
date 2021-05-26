@@ -7,12 +7,12 @@ import torch.nn.functional as F
 from torch import nn
 from typing import List, Optional, Union
 
-from src.utils.dropout.GaussianDropout import GaussianDropout
-from src.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
-from src.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
-from src.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
+from c_unet.utils.dropout.GaussianDropout import GaussianDropout
+from c_unet.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
+from c_unet.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
+from c_unet.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
 
-from src.layers.convs import ConvBlock
+from c_unet.layers.convs import ConvBlock
 
 class Gconv3d(nn.Module):
     """Performs a discretized convolution on SO(3)
@@ -58,15 +58,15 @@ class Gconv3d(nn.Module):
             raise ValueError(f"Invalid padding value: {padding}")
 
         if group == "V":
-            from src.groups.V_group import V_group
+            from c_unet.groups.V_group import V_group
             self.group = V_group()
             self.group_dim = self.group.group_dim
         elif group == "S4":
-            from src.groups.S4_group import S4_group
+            from c_unet.groups.S4_group import S4_group
             self.group = S4_group()
             self.group_dim = self.group.group_dim
         elif group == "T4":
-            from src.groups.T4_group import T4_group
+            from c_unet.groups.T4_group import T4_group
             self.group = T4_group()
             self.group_dim = self.group.group_dim
         else:

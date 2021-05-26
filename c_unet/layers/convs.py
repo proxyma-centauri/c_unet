@@ -8,8 +8,8 @@ from torch import nn
 from torch.autograd import Variable
 from typing import List, Optional, Union
 
-from src.utils.helpers.helpers import conv3d
-from src.utils.normalization.SwitchNorm3d import SwitchNorm3d
+from c_unet.utils.helpers.helpers import conv3d
+from c_unet.utils.normalization.SwitchNorm3d import SwitchNorm3d
 
 class ConvBlock(nn.Module):
     """Applies a 3D convolution with optional normalization and nonlinearity steps block

@@ -2,9 +2,9 @@ import logging
 from typing import List, Optional, Union
 import torch.nn as nn
 
-from src.layers.gconvs import GconvResBlock, GconvBlock
-from src.layers.convs import ConvBlock
-from src.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
+from c_unet.layers.gconvs import GconvResBlock, GconvBlock
+from c_unet.layers.convs import ConvBlock
+from c_unet.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
 class EncoderBlock(nn.Module):
