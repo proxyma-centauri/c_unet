@@ -58,7 +58,7 @@ class EncoderBlock(nn.Module):
         super(EncoderBlock, self).__init__()
 
         self.root_feat_maps = root_feat_maps
-        self.num_conv_blocks =num_conv_blocks
+        self.num_conv_blocks = num_conv_blocks
         self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()

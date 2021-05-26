@@ -16,7 +16,6 @@ class Unet(nn.Module):
                 group_dim: int,
                 # Channels arguments
                 in_channels: int,
-                internal_channels: int,
                 out_channels: int,
                 # Pooling
                 pool_size: int=2,

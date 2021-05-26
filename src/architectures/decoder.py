@@ -63,12 +63,7 @@ class DecoderBlock(nn.Module):
                                         tconv_stride,
                                         tconv_padding,
                                         output_padding)
-                # self.upsample = nn.ConvTranspose3d(in_channels,
-                #                                 inter_channels,
-                #                                 tconv_kernel_size,
-                #                                 tconv_stride,
-                #                                 tconv_padding,
-                #                                 output_padding=output_padding)
+            
             self.module_dict[f"upsample_{depth}"] = self.upsample
 
             for conv_nb in range(self.num_conv_blocks):

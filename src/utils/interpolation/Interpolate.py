@@ -47,8 +47,6 @@ class Interpolate(nn.Module):
                                 self.output_padding)
             sizes.append(hs)
 
-        self.logger.debug(f"Upsampling size, {sizes}")
-
         # Apply interpolate
         x = F.interpolate(x,
                         size=sizes,
