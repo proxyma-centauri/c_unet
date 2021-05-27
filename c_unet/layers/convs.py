@@ -106,7 +106,18 @@ class ConvResBlock(nn.Module):
                 normalization: Optional[str] = "bn"):
         super(ConvResBlock, self).__init__()
 
-        self.block_1 = ConvBlock(in_channels,
+        self.match_channels = ConvBlock(in_channels,
+                            out_channels,
+                            kernel_size=1,
+                            stride=1,
+                            padding=0,
+                            dilation=1,
+                            bias=False,
+                            nonlinearity="",
+                            normalization=""
+        )
+
+        self.block_1 = ConvBlock(out_channels,
                             out_channels,
                             kernel_size,
                             stride,
@@ -130,7 +141,8 @@ class ConvResBlock(nn.Module):
         
 
     def forward(self, x):
-        x = self.block_1(x)
-        y = self.block_2(x)
+        x = self.match_channels(x)
+        y = self.block_1(x)
+        y = self.block_2(y)
         y = self.relu(y + x)
         return y

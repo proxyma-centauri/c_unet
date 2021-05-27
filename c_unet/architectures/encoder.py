@@ -2,8 +2,8 @@ import logging
 from typing import List, Optional, Union
 import torch.nn as nn
 
-from c_unet.layers.gconvs import GconvResBlock, GconvBlock
-from c_unet.layers.convs import ConvBlock
+from c_unet.layers.gconvs import GconvResBlock
+from c_unet.layers.convs import ConvResBlock
 from c_unet.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
@@ -75,21 +75,22 @@ class EncoderBlock(nn.Module):
 
             for conv_nb in range(self.num_conv_blocks):
                 if group:
-                    expected_group_dim = 1 if (depth == 0 and conv_nb == 0) else group_dim
-                    self.conv_block = GconvBlock(group,
-                                            expected_group_dim,
+                    is_first_conv = True if (depth == 0 and conv_nb == 0) else False
+                    self.conv_block = GconvResBlock(group,
+                                            group_dim,
                                             in_channels,
                                             feat_map_channels,
+                                            is_first_conv,
                                             kernel_size,
                                             stride,
                                             padding,
-                                            dilation,
-                                            dropout,
-                                            bias,
-                                            nonlinearity,
-                                            normalization)
+                                            dilation=dilation,
+                                            dropout=dropout,
+                                            bias=bias,
+                                            nonlinearity=nonlinearity,
+                                            normalization=normalization)
                 else: # TODO check order of arguments
-                    self.conv_block = ConvBlock(in_channels,
+                    self.conv_block = ConvResBlock(in_channels,
                                             feat_map_channels,
                                             kernel_size,
                                             stride,

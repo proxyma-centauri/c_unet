@@ -169,16 +169,16 @@ class GconvBlock(nn.Module):
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvBlock, self).__init__()
-        self.bias = True
+        self.bias = bias
         
         self.Gconv = Gconv3d(group,
                     expected_group_dim,
                     in_channels,
                     out_channels,
                     kernel_size,
+                    dilation,
                     stride,
                     padding,
-                    dilation,
                     dropout)
 
         group_dim = self.Gconv.group_dim
@@ -267,6 +267,20 @@ class GconvResBlock(nn.Module):
 
         expected_group_dim = 1 if is_first_conv else group_dim
 
+        self.match_channels = GconvBlock(group,
+                            expected_group_dim,
+                            in_channels,
+                            out_channels,
+                            kernel_size=1,
+                            stride=1,
+                            padding=0,
+                            dilation=1,
+                            dropout=0,
+                            bias=False,
+                            nonlinearity="",
+                            normalization=""
+        )
+
         self.G_block_1 = GconvBlock(group,
                             expected_group_dim,
                             in_channels,
@@ -298,9 +312,10 @@ class GconvResBlock(nn.Module):
         
 
     def forward(self, x):
-        x = self.G_block_1(x)
-        y = self.G_block_2(x)
-        y = self.relu(y + x)
+        z = self.match_channels(x)
+        y = self.G_block_1(x)
+        y = self.G_block_2(y)
+        y = self.relu(y + z)
 
         return y
 
