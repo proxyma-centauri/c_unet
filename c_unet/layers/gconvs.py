@@ -1,4 +1,5 @@
 
+import logging
 import torch
 import torch.nn.functional as F
 
@@ -8,7 +9,6 @@ from typing import List, Optional, Union
 from c_unet.utils.dropout.GaussianDropout import GaussianDropout
 from c_unet.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
 from c_unet.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
-from c_unet.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
 
 from c_unet.layers.convs import ConvBlock
 
@@ -263,6 +263,7 @@ class GconvResBlock(nn.Module):
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvResBlock, self).__init__()
+        self.logger = logging.getLogger(__name__)
 
         expected_group_dim = 1 if is_first_conv else group_dim
 
@@ -292,21 +293,16 @@ class GconvResBlock(nn.Module):
                             nonlinearity="", # No nonlinearity
                             normalization=normalization
         )
-        self.AvgPool = ReshapedAvgPool(kernel_size, 
-                        stride, 
-                        padding
-        )
+
+        self.relu = nn.ReLU()
         
 
     def forward(self, x):
-        # Convolutions
-        y = self.G_block_1(x)
-        y = self.G_block_2(y)
+        x = self.G_block_1(x)
+        y = self.G_block_2(x)
+        y = self.relu(y + x)
 
-        # Average Pooling
-        x = self.AvgPool(x)
-
-        return x + y
+        return y
 
 
 class FinalGroupConvolution(nn.Module):
