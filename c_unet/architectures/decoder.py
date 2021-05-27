@@ -113,6 +113,7 @@ class DecoderBlock(nn.Module):
                                         group_dim,
                                         in_channels,
                                         inter_channels,
+                                        inter_channels,
                                         not_first_conv,
                                         kernel_size,
                                         stride,
@@ -124,6 +125,7 @@ class DecoderBlock(nn.Module):
                                         normalization=normalization)
                 else:
                     self.conv = ConvResBlock(in_channels,
+                                    inter_channels,
                                     inter_channels,
                                     kernel_size,
                                     stride,
@@ -141,6 +143,7 @@ class DecoderBlock(nn.Module):
                                         group_dim,
                                         in_channels,
                                         out_channels,
+                                        out_channels,
                                         not_first_conv,
                                         kernel_size,
                                         stride,
@@ -156,6 +159,7 @@ class DecoderBlock(nn.Module):
                                                     final_activation)
                 else:
                     self.final_conv = ConvResBlock(in_channels,
+                                        out_channels,
                                         out_channels,
                                         kernel_size,
                                         stride,

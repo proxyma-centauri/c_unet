@@ -96,6 +96,7 @@ class ConvResBlock(nn.Module):
     """
     def __init__(self,
                 in_channels: int,
+                inter_channels: int,
                 out_channels: int,
                 kernel_size: int = 3,
                 stride: Union[int, List[int]] = 1,
@@ -117,8 +118,8 @@ class ConvResBlock(nn.Module):
                             normalization=""
         )
 
-        self.block_1 = ConvBlock(out_channels,
-                            out_channels,
+        self.block_1 = ConvBlock(in_channels,
+                            inter_channels,
                             kernel_size,
                             stride,
                             padding,
@@ -127,7 +128,7 @@ class ConvResBlock(nn.Module):
                             nonlinearity=nonlinearity,
                             normalization=normalization
         )
-        self.block_2 = ConvBlock(out_channels,
+        self.block_2 = ConvBlock(inter_channels,
                             out_channels,
                             kernel_size,
                             stride,
@@ -141,8 +142,8 @@ class ConvResBlock(nn.Module):
         
 
     def forward(self, x):
-        x = self.match_channels(x)
+        z = self.match_channels(x)
         y = self.block_1(x)
         y = self.block_2(y)
-        y = self.relu(y + x)
+        y = self.relu(y + z)
         return y

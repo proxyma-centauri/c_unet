@@ -80,6 +80,7 @@ class EncoderBlock(nn.Module):
                                             group_dim,
                                             in_channels,
                                             feat_map_channels,
+                                            feat_map_channels,
                                             is_first_conv,
                                             kernel_size,
                                             stride,
@@ -91,6 +92,7 @@ class EncoderBlock(nn.Module):
                                             normalization=normalization)
                 else: # TODO check order of arguments
                     self.conv_block = ConvResBlock(in_channels,
+                                            feat_map_channels,
                                             feat_map_channels,
                                             kernel_size,
                                             stride,
