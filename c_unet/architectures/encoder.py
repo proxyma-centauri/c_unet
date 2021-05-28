@@ -1,3 +1,4 @@
+from c_unet.architectures.dilated_dense import DilatedDenseBlock
 import logging
 from typing import List, Optional, Union
 import torch.nn as nn
@@ -58,22 +59,22 @@ class EncoderBlock(nn.Module):
                 # Model
                 model_depth: int=4,
                 root_feat_maps: int = 16,
-                num_conv_blocks: int = 2,
                 # Group arguments (by default, no group)
                 group: Union[str, None]=None,
                 group_dim: int=0):
         super(EncoderBlock, self).__init__()
 
         self.root_feat_maps = root_feat_maps
-        self.num_conv_blocks = num_conv_blocks
         self.logger = logging.getLogger(__name__)
+
 
         self.module_dict = nn.ModuleDict()
 
+        # U-net structure
         for depth in range(model_depth):
             feat_map_channels = 2 ** (depth + 1) * self.root_feat_maps
 
-            for conv_nb in range(self.num_conv_blocks):
+            for conv_nb in range(2):
                 if group:
                     is_first_conv = True if (depth == 0 and conv_nb == 0) else False
                     self.conv_block = GconvResBlock(group,
@@ -90,20 +91,36 @@ class EncoderBlock(nn.Module):
                                             bias=bias,
                                             nonlinearity=nonlinearity,
                                             normalization=normalization)
-                else: # TODO check order of arguments
+                else:
                     self.conv_block = ConvResBlock(in_channels,
                                             feat_map_channels,
                                             feat_map_channels,
                                             kernel_size,
                                             stride,
                                             padding,
-                                            bias,
-                                            dilation,
-                                            nonlinearity,
-                                            normalization)
-                self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv_block
+                                            bias=bias,
+                                            dilation=dilation,
+                                            nonlinearity=nonlinearity,
+                                            normalization=normalization)
+
+                self.module_dict[f"conv_block_{depth}_{conv_nb}"] = self.conv_block
 
                 in_channels, feat_map_channels = feat_map_channels, feat_map_channels * 2
+
+            if depth == 1:
+                self.dilated_dense = DilatedDenseBlock(in_channels,
+                                            root_feat_maps*2,
+                                            in_channels,
+                                            kernel_size,
+                                            stride,
+                                            dropout,
+                                            bias,
+                                            nonlinearity,
+                                            normalization,
+                                            3,
+                                            2,
+                                            group,
+                                            group_dim)
 
             if depth == model_depth - 1:
                 break
@@ -115,6 +132,7 @@ class EncoderBlock(nn.Module):
                 
                 self.module_dict[f"max_pooling_{depth}"] = self.pooling
 
+
     def forward(self, x):
         down_sampling_features = []
         for key, layer in self.module_dict.items():
@@ -122,6 +140,9 @@ class EncoderBlock(nn.Module):
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
                 if key.endswith("1"):
+                    # Layer 1
+                    if key.count("1") == 2:
+                        x = self.dilated_dense(x)
                     down_sampling_features.append(x)
             elif key.startswith("max_pooling"):
                 x = layer(x)

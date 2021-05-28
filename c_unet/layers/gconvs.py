@@ -235,9 +235,10 @@ class GconvResBlock(nn.Module):
         out_channels (int): Number of output channels
         is_first_conv (bool) : Boolean indicating whether the first convolution 
             of the residual block should have an expected_group_dim of 1.
-        kernel_size (int): Size of the kernel. Defaults to 3.
+        kernel_size (int): Size of the kernels. Defaults to 3.
         stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
         padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        first_kernel_size (int): Overrides the size of the first kernel. Defaults to 3.
         bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
         dilation (int, optional): Spacing between kernel elements. Defaults to 1.
         dropout (float, optional) : Value of dropout to use. Defaults to 0.1
@@ -260,6 +261,8 @@ class GconvResBlock(nn.Module):
                 padding: Union[str, int] = 1,
                 dilation: int = 1,
                 dropout: float = 0.1,
+                first_kernel_size: Optional[int] = None,
+                first_padding: Optional[int] = None,
                 bias: Optional[bool] = True,
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
@@ -267,6 +270,8 @@ class GconvResBlock(nn.Module):
         self.logger = logging.getLogger(__name__)
 
         expected_group_dim = 1 if is_first_conv else group_dim
+        other_kernel_size = first_kernel_size if first_kernel_size is not None else kernel_size
+        other_padding = first_padding if first_padding is not None else padding
 
         self.match_channels = GconvBlock(group,
                             expected_group_dim,
@@ -286,9 +291,9 @@ class GconvResBlock(nn.Module):
                             expected_group_dim,
                             in_channels,
                             inter_channels,
-                            kernel_size,
+                            other_kernel_size,
                             stride,
-                            padding,
+                            other_padding,
                             dilation,
                             dropout,
                             bias=bias,

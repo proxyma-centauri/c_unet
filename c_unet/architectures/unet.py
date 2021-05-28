@@ -77,7 +77,6 @@ class Unet(nn.Module):
                 model_depth=4,
                 root_feat_maps: int = 16,
                 num_feat_maps: int = 16,
-                num_conv_blocks: int = 2,
                 final_activation: str="sigmoid"):
         super(Unet, self).__init__()
 
@@ -96,7 +95,6 @@ class Unet(nn.Module):
                                     normalization=normalization,
                                     model_depth=model_depth,
                                     root_feat_maps=root_feat_maps,
-                                    num_conv_blocks=num_conv_blocks,
                                     group=group,
                                     group_dim=group_dim)
 
@@ -115,7 +113,6 @@ class Unet(nn.Module):
                                     normalization=normalization,
                                     model_depth=model_depth,
                                     num_feat_maps=num_feat_maps,
-                                    num_conv_blocks=num_conv_blocks,
                                     final_activation=final_activation,
                                     group=group,
                                     group_dim=group_dim)

@@ -64,7 +64,6 @@ class DecoderBlock(nn.Module):
                 # Model arguments
                 model_depth: int=4,
                 num_feat_maps: int = 16,
-                num_conv_blocks: int = 2,
                 final_activation: str ="sigmoid",
                 # Group arguments (by default, no group)
                 group: Union[str, None]=None,
@@ -72,7 +71,6 @@ class DecoderBlock(nn.Module):
         super(DecoderBlock, self).__init__()
 
         self.num_feat_maps = num_feat_maps
-        self.num_conv_blocks = num_conv_blocks
         self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
@@ -100,7 +98,7 @@ class DecoderBlock(nn.Module):
             self.module_dict[f"upsample_{depth}"] = self.upsample
             not_first_conv = False
 
-            for conv_nb in range(self.num_conv_blocks):
+            for conv_nb in range(2):
 
                 # Multiplier factor for channels
                 multiplier = 2
@@ -134,7 +132,7 @@ class DecoderBlock(nn.Module):
                                     dilation=dilation,
                                     nonlinearity=nonlinearity,
                                     normalization=normalization)
-                self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv
+                self.module_dict[f"conv_block_{depth}_{conv_nb}"] = self.conv
 
             if depth == 0:
                 in_channels = feat_map_channels * 2

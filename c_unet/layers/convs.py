@@ -1,3 +1,4 @@
+import logging 
 
 from torch import nn
 from typing import List, Optional, Union
@@ -77,12 +78,16 @@ class ConvResBlock(nn.Module):
         group_dim (int): Group dimension, it is 
             equal to the group dimension
         in_channels (int): Number of input channels
+        inter_channels (int): Number of intermediate channels
         out_channels (int): Number of output channels
         is_first_conv (bool) : Boolean indicating whether the first convolution 
             of the residual block should have an expected_group_dim of 1.
         kernel_size (int): Size of the kernel. Defaults to 3.
         stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
         padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        first_kernel_size (int): Overrides the size of the first kernel. Defaults to 3.
+        first_padding (Union[str, int], optional): Overrides the padding added to all three sides of the input 
+            for the first conv. Defaults to 1.
         bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
         dilation (int, optional): Spacing between kernel elements. Defaults to 1.
         dropout (float, optional) : Value of dropout to use. Defaults to 0.1
@@ -101,12 +106,18 @@ class ConvResBlock(nn.Module):
                 kernel_size: int = 3,
                 stride: Union[int, List[int]] = 1,
                 padding: Union[str, int] = 1,
+                first_kernel_size: Optional[int] = None,
+                first_padding: Optional[int] = None,
                 bias: Optional[bool] = True,
                 dilation: int = 1,
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(ConvResBlock, self).__init__()
+        self.logger = logging.getLogger(__name__)
 
+        other_kernel_size = first_kernel_size if first_kernel_size is not None else kernel_size
+        other_padding = first_padding if first_padding is not None else padding
+        
         self.match_channels = ConvBlock(in_channels,
                             out_channels,
                             kernel_size=1,
@@ -120,9 +131,9 @@ class ConvResBlock(nn.Module):
 
         self.block_1 = ConvBlock(in_channels,
                             inter_channels,
-                            kernel_size,
+                            other_kernel_size,
                             stride,
-                            padding,
+                            other_padding,
                             bias,
                             dilation,
                             nonlinearity=nonlinearity,
