@@ -20,7 +20,7 @@ class Interpolate(nn.Module):
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1, 
                 mode: str='trilinear', 
-                align_corners: Optional[bool]=None):
+                align_corners: Optional[bool]=False):
 
         super(Interpolate, self).__init__()
         self.logger = logging.getLogger(__name__)

@@ -6,8 +6,8 @@ from typing import List, Optional, Union
 from c_unet.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
 from c_unet.utils.interpolation.Interpolate import Interpolate
 
-from c_unet.layers.gconvs import GconvResBlock, GconvBlock, FinalGroupConvolution
-from c_unet.layers.convs import ConvBlock
+from c_unet.layers.gconvs import GconvResBlock, FinalGroupConvolution
+from c_unet.layers.convs import ConvResBlock
 
 
 class DecoderBlock(nn.Module):
@@ -33,7 +33,6 @@ class DecoderBlock(nn.Module):
 
         - model_depth (int): Depth of the encoding path. Defaults to 4.
         - num_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
-        - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
         - final_activation (str): Name of the final activation to use. Defaults to sigmoid.
 
         - group (str): Shorthand name representing the group to use
@@ -64,7 +63,6 @@ class DecoderBlock(nn.Module):
                 # Model arguments
                 model_depth: int=4,
                 num_feat_maps: int = 16,
-                num_conv_blocks: int = 2,
                 final_activation: str ="sigmoid",
                 # Group arguments (by default, no group)
                 group: Union[str, None]=None,
@@ -72,17 +70,12 @@ class DecoderBlock(nn.Module):
         super(DecoderBlock, self).__init__()
 
         self.num_feat_maps = num_feat_maps
-        self.num_conv_blocks = num_conv_blocks
         self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
 
         for depth in range(model_depth - 2, -1, -1):
             feat_map_channels = 2 ** (depth + 1) * self.num_feat_maps
-
-            # TODO : see how to ajust kernel size, stride, etc to more situations while always allowing concatenations
-            # TODO : check output_padding vs stride
-            in_channels, inter_channels = feat_map_channels * 4, feat_map_channels * 4
 
             if group:
                 self.upsample = ReshapedInterpolate(dilation,
@@ -98,69 +91,69 @@ class DecoderBlock(nn.Module):
                                         output_padding)
             
             self.module_dict[f"upsample_{depth}"] = self.upsample
+            not_first_conv = False
 
-            for conv_nb in range(self.num_conv_blocks):
-
-                # Multiplier factor for channels
-                multiplier = 2
-                if conv_nb == 0:
-                    multiplier = 6
-
-                in_channels, inter_channels = feat_map_channels * multiplier, feat_map_channels * 2
-                if group:
-                    self.conv = GconvBlock(group,
-                                        group_dim,
-                                        in_channels,
-                                        inter_channels,
-                                        kernel_size,
-                                        stride,
-                                        padding,
-                                        dilation,
-                                        dropout,
-                                        bias,
-                                        nonlinearity,
-                                        normalization)
-                else:
-                    self.conv = ConvBlock(in_channels,
+            in_channels, inter_channels = feat_map_channels * 6, feat_map_channels * 2
+            if group:
+                self.conv = GconvResBlock(group,
+                                    group_dim,
+                                    in_channels,
                                     inter_channels,
+                                    inter_channels,
+                                    not_first_conv,
                                     kernel_size,
                                     stride,
                                     padding,
-                                    bias,
-                                    dilation,
-                                    nonlinearity,
-                                    normalization)
-                self.module_dict[f"conv_{depth}_{conv_nb}"] = self.conv
+                                    dilation=dilation,
+                                    dropout=dropout,
+                                    bias=bias,
+                                    nonlinearity=nonlinearity,
+                                    normalization=normalization)
+            else:
+                self.conv = ConvResBlock(in_channels,
+                                inter_channels,
+                                inter_channels,
+                                kernel_size,
+                                stride,
+                                padding,
+                                bias=bias,
+                                dilation=dilation,
+                                nonlinearity=nonlinearity,
+                                normalization=normalization)
+            self.module_dict[f"conv_block_{depth}"] = self.conv
 
             if depth == 0:
                 in_channels = feat_map_channels * 2
                 if group:
-                    group_final_conv = GconvBlock(group,
+                    group_final_conv = GconvResBlock(group,
                                         group_dim,
                                         in_channels,
                                         out_channels,
+                                        out_channels,
+                                        not_first_conv,
                                         kernel_size,
                                         stride,
                                         padding,
-                                        dilation,
-                                        dropout,
-                                        bias,
-                                        nonlinearity,
-                                        normalization)
+                                        dilation=dilation,
+                                        dropout=dropout,
+                                        bias=bias,
+                                        nonlinearity=nonlinearity,
+                                        normalization=normalization)
                     self.final_conv = FinalGroupConvolution(group_final_conv,
                                                     group_dim,
                                                     out_channels,
                                                     final_activation)
                 else:
-                    self.final_conv = ConvBlock(in_channels,
+                    self.final_conv = ConvResBlock(in_channels,
+                                        out_channels,
                                         out_channels,
                                         kernel_size,
                                         stride,
                                         padding,
-                                        bias,
-                                        dilation,
-                                        final_activation,
-                                        normalization)
+                                        bias=bias,
+                                        dilation=dilation,
+                                        nonlinearity=final_activation,
+                                        normalization=normalization)
                 self.module_dict["final_conv"] = self.final_conv
 
     def forward(self, x, down_sampling_features):

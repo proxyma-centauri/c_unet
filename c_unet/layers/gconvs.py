@@ -1,4 +1,5 @@
 
+import logging
 import torch
 import torch.nn.functional as F
 
@@ -8,7 +9,6 @@ from typing import List, Optional, Union
 from c_unet.utils.dropout.GaussianDropout import GaussianDropout
 from c_unet.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
 from c_unet.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
-from c_unet.utils.pooling.ReshapedAvgPool import ReshapedAvgPool
 
 from c_unet.layers.convs import ConvBlock
 
@@ -169,16 +169,16 @@ class GconvBlock(nn.Module):
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvBlock, self).__init__()
-        self.bias = True
+        self.bias = bias
         
         self.Gconv = Gconv3d(group,
                     expected_group_dim,
                     in_channels,
                     out_channels,
                     kernel_size,
+                    dilation,
                     stride,
                     padding,
-                    dilation,
                     dropout)
 
         group_dim = self.Gconv.group_dim
@@ -235,9 +235,10 @@ class GconvResBlock(nn.Module):
         out_channels (int): Number of output channels
         is_first_conv (bool) : Boolean indicating whether the first convolution 
             of the residual block should have an expected_group_dim of 1.
-        kernel_size (int): Size of the kernel. Defaults to 3.
+        kernel_size (int): Size of the kernels. Defaults to 3.
         stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
         padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
+        first_kernel_size (int): Overrides the size of the first kernel. Defaults to 3.
         bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
         dilation (int, optional): Spacing between kernel elements. Defaults to 1.
         dropout (float, optional) : Value of dropout to use. Defaults to 0.1
@@ -252,6 +253,7 @@ class GconvResBlock(nn.Module):
                 group: str,
                 group_dim: int,
                 in_channels: int,
+                inter_channels: int,
                 out_channels: int,
                 is_first_conv: bool = False,
                 kernel_size: int = 3,
@@ -259,20 +261,39 @@ class GconvResBlock(nn.Module):
                 padding: Union[str, int] = 1,
                 dilation: int = 1,
                 dropout: float = 0.1,
+                first_kernel_size: Optional[int] = None,
+                first_padding: Optional[int] = None,
                 bias: Optional[bool] = True,
                 nonlinearity: Optional[str] = "relu",
                 normalization: Optional[str] = "bn"):
         super(GconvResBlock, self).__init__()
+        self.logger = logging.getLogger(__name__)
 
         expected_group_dim = 1 if is_first_conv else group_dim
+        other_kernel_size = first_kernel_size if first_kernel_size is not None else kernel_size
+        other_padding = first_padding if first_padding is not None else padding
+
+        self.match_channels = GconvBlock(group,
+                            expected_group_dim,
+                            in_channels,
+                            out_channels,
+                            kernel_size=1,
+                            stride=1,
+                            padding=0,
+                            dilation=1,
+                            dropout=0,
+                            bias=False,
+                            nonlinearity="",
+                            normalization=""
+        )
 
         self.G_block_1 = GconvBlock(group,
                             expected_group_dim,
                             in_channels,
-                            out_channels,
-                            kernel_size,
+                            inter_channels,
+                            other_kernel_size,
                             stride,
-                            padding,
+                            other_padding,
                             dilation,
                             dropout,
                             bias=bias,
@@ -281,7 +302,7 @@ class GconvResBlock(nn.Module):
         )
         self.G_block_2 = GconvBlock(group,
                             group_dim,
-                            out_channels,
+                            inter_channels,
                             out_channels,
                             kernel_size,
                             stride,
@@ -292,21 +313,17 @@ class GconvResBlock(nn.Module):
                             nonlinearity="", # No nonlinearity
                             normalization=normalization
         )
-        self.AvgPool = ReshapedAvgPool(kernel_size, 
-                        stride, 
-                        padding
-        )
+
+        self.relu = nn.ReLU()
         
 
     def forward(self, x):
-        # Convolutions
+        z = self.match_channels(x)
         y = self.G_block_1(x)
         y = self.G_block_2(y)
+        y = self.relu(y + z)
 
-        # Average Pooling
-        x = self.AvgPool(x)
-
-        return x + y
+        return y
 
 
 class FinalGroupConvolution(nn.Module):
@@ -322,6 +339,8 @@ class FinalGroupConvolution(nn.Module):
         self.g_conv = group_convolution
         self.reshaping_conv = ConvBlock(out_channels*group_dim,
                                     out_channels,
+                                    kernel_size=1,
+                                    padding=0,
                                     nonlinearity=final_activation,
                                     normalization="")
 

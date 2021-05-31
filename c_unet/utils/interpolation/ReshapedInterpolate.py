@@ -20,7 +20,7 @@ class ReshapedInterpolate(nn.Module):
                 tconv_padding: Union[str, int] = 1,
                 output_padding: Union[str, int] = 1, 
                 mode: str='trilinear', 
-                align_corners: Optional[bool]=None):
+                align_corners: Optional[bool]=False):
 
         super(ReshapedInterpolate, self).__init__()
 
