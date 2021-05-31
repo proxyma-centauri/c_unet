@@ -21,10 +21,10 @@ class Unet(nn.Module):
         - pool_stride (Union[int, List[int]]): Stride of the pooling. Defaults to 2.
         - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at pooling. Defaults to 0.
 
-        - tconv_kernel_size (int): Size of the kernel. Defaults to 3.
+        - tconv_kernel_size (int): Size of the kernel. Defaults to 4.
         - tconv_stride (Union[int, List[int]]): Stride of the upsampling. Defaults to 2.
-        - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at upsampling. Defaults to 1.
-        - output_padding (Union[str, int]): Additional size added to one side of each dimension in the output shape. Defaults to 1.
+        - tconv_padding (Union[str, int]): Zero-padding added to all three sides of the input at upsampling. Defaults to 1.
+        - output_padding (Union[str, int]): Additional size added to one side of each dimension in the output shape. Defaults to 0.
 
         - dropout (float, optional) : Value of dropout to use. Defaults to 0.1
         - stride (Union[int, List[int]]): Stride of the convolution. Defaults to 1.
@@ -56,10 +56,10 @@ class Unet(nn.Module):
                 pool_stride: Union[int, List[int]] = 2,
                 pool_padding: Union[str, int] = 0,
                 # Transpose convolutions arguments
-                tconv_kernel_size: int=3,
+                tconv_kernel_size: int=4,
                 tconv_stride: Union[int, List[int]] = 2,
                 tconv_padding: Union[str, int] = 1,
-                output_padding: Union[str, int] = 1,
+                output_padding: Union[str, int] = 0,
                 # Convolutional arguments
                 dropout: Optional[bool] = 0.1,
                 stride: Union[int, List[int]] = 1,
