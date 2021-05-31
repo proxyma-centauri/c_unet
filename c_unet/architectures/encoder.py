@@ -29,7 +29,7 @@ class EncoderBlock(nn.Module):
         - normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
 
         - model_depth (int): Depth of the encoding path. Defaults to 4.
-        - root_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
+        - root_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 32.
         - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
 
         - group (str): Shorthand name representing the group to use
@@ -58,7 +58,7 @@ class EncoderBlock(nn.Module):
                 normalization: Optional[str] = "bn",
                 # Model
                 model_depth: int=4,
-                root_feat_maps: int = 16,
+                root_feat_maps: int = 32,
                 # Group arguments (by default, no group)
                 group: Union[str, None]=None,
                 group_dim: int=0):
@@ -73,39 +73,38 @@ class EncoderBlock(nn.Module):
         # U-net structure
         for depth in range(model_depth):
             feat_map_channels = 2 ** (depth + 1) * self.root_feat_maps
+            
+            if group:
+                is_first_conv = True if (depth == 0) else False
+                self.conv_block = GconvResBlock(group,
+                                        group_dim,
+                                        in_channels,
+                                        feat_map_channels,
+                                        feat_map_channels,
+                                        is_first_conv,
+                                        kernel_size,
+                                        stride,
+                                        padding,
+                                        dilation=dilation,
+                                        dropout=dropout,
+                                        bias=bias,
+                                        nonlinearity=nonlinearity,
+                                        normalization=normalization)
+            else:
+                self.conv_block = ConvResBlock(in_channels,
+                                        feat_map_channels,
+                                        feat_map_channels,
+                                        kernel_size,
+                                        stride,
+                                        padding,
+                                        bias=bias,
+                                        dilation=dilation,
+                                        nonlinearity=nonlinearity,
+                                        normalization=normalization)
 
-            for conv_nb in range(2):
-                if group:
-                    is_first_conv = True if (depth == 0 and conv_nb == 0) else False
-                    self.conv_block = GconvResBlock(group,
-                                            group_dim,
-                                            in_channels,
-                                            feat_map_channels,
-                                            feat_map_channels,
-                                            is_first_conv,
-                                            kernel_size,
-                                            stride,
-                                            padding,
-                                            dilation=dilation,
-                                            dropout=dropout,
-                                            bias=bias,
-                                            nonlinearity=nonlinearity,
-                                            normalization=normalization)
-                else:
-                    self.conv_block = ConvResBlock(in_channels,
-                                            feat_map_channels,
-                                            feat_map_channels,
-                                            kernel_size,
-                                            stride,
-                                            padding,
-                                            bias=bias,
-                                            dilation=dilation,
-                                            nonlinearity=nonlinearity,
-                                            normalization=normalization)
+            self.module_dict[f"conv_block_{depth}"] = self.conv_block
 
-                self.module_dict[f"conv_block_{depth}_{conv_nb}"] = self.conv_block
-
-                in_channels, feat_map_channels = feat_map_channels, feat_map_channels * 2
+            in_channels, feat_map_channels = feat_map_channels, feat_map_channels * 2
 
             if depth == 1:
                 self.dilated_dense = DilatedDenseBlock(in_channels,
@@ -139,11 +138,9 @@ class EncoderBlock(nn.Module):
             if key.startswith("conv"):
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
-                if key.endswith("1"):
-                    # Layer 1
-                    if key.count("1") == 2:
-                        x = self.dilated_dense(x)
-                    down_sampling_features.append(x)
+                if key.endswith("1"): # Layer 1
+                    x = self.dilated_dense(x)
+                down_sampling_features.append(x)
             elif key.startswith("max_pooling"):
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")

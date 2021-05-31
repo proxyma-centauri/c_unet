@@ -37,9 +37,6 @@ class Unet(nn.Module):
         - normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
 
         - model_depth (int): Depth of the encoding path. Defaults to 4.
-        - root_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
-        - num_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
-        - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.   
         - final_activation (str): Name of the final activation to use. Defaults to sigmoid.
 
     Raises:
@@ -75,12 +72,15 @@ class Unet(nn.Module):
                 normalization: Optional[str] = "bn",
                 # Architecture arguments
                 model_depth=4,
-                root_feat_maps: int = 16,
-                num_feat_maps: int = 16,
                 final_activation: str="sigmoid"):
         super(Unet, self).__init__()
 
         self.logger = logging.getLogger(__name__)
+
+        # Model constants
+        self.root_feat_maps = 32
+        self.num_feat_maps = 16      
+
         self.encoder = EncoderBlock(in_channels=in_channels, 
                                     kernel_size=kernel_size,
                                     stride=stride,
@@ -94,7 +94,7 @@ class Unet(nn.Module):
                                     nonlinearity=nonlinearity,
                                     normalization=normalization,
                                     model_depth=model_depth,
-                                    root_feat_maps=root_feat_maps,
+                                    root_feat_maps=self.root_feat_maps,
                                     group=group,
                                     group_dim=group_dim)
 
@@ -112,7 +112,7 @@ class Unet(nn.Module):
                                     nonlinearity=nonlinearity,
                                     normalization=normalization,
                                     model_depth=model_depth,
-                                    num_feat_maps=num_feat_maps,
+                                    num_feat_maps=self.num_feat_maps,
                                     final_activation=final_activation,
                                     group=group,
                                     group_dim=group_dim)
