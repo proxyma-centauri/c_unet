@@ -339,6 +339,8 @@ class FinalGroupConvolution(nn.Module):
         self.g_conv = group_convolution
         self.reshaping_conv = ConvBlock(out_channels*group_dim,
                                     out_channels,
+                                    kernel_size=1,
+                                    padding=0,
                                     nonlinearity=final_activation,
                                     normalization="")
 
