@@ -12,6 +12,7 @@ class LightningUnet(pl.LightningModule):
         - criterion (nn.functional): loss function
         - optimizer_class (torch.optim.Optimizer):
         - unet (nn.Module): model to use.
+        - is_group (bool):
         - learning rate (float): learning rate. Defaults to 0.1
     """
 
@@ -20,6 +21,7 @@ class LightningUnet(pl.LightningModule):
                 criterion: nn.functional, 
                 optimizer_class: Optimizer,
                 unet: nn.Module,
+                is_group: bool,
                 learning_rate: float = 0.1
                 ):
         super(LightningUnet, self).__init__()
@@ -29,6 +31,7 @@ class LightningUnet(pl.LightningModule):
         self.lr = learning_rate
         self.criterion = criterion
         self.optimizer_class = optimizer_class
+        self.is_group = is_group
         self.unet = unet
 
         self.save_hyperparameters()
@@ -41,7 +44,10 @@ class LightningUnet(pl.LightningModule):
         return optimizer
     
     def prepare_batch(self, batch):
-        return batch['image'][tio.DATA], batch['label'][tio.DATA]
+        if self.is_group:
+            return batch['image_group'][tio.DATA], batch['label'][tio.DATA]
+        else:
+            return batch['image'][tio.DATA], batch['label'][tio.DATA]
     
     def infer_batch(self, batch):
         inputs, labels = self.prepare_batch(batch)

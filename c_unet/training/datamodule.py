@@ -34,13 +34,13 @@ class DataModule(pl.LightningDataModule):
     
     def get_max_shape(self, subjects):
         dataset = tio.SubjectsDataset(subjects)
-        shapes = np.array([s.spatial_shape for s in dataset])
+        shapes = np.array([s.get_first_image().spatial_shape for s in dataset])
         return shapes.max(axis=0)
     
     def download_data(self):
 
         def get_niis(d):
-            return sorted(p for p in d.glob('*.nii*') if not p.name.startswith('.'))
+            return sorted(p for p in d.glob('*standard.nii*') if not p.name.startswith('.'))
 
         image_training_paths = get_niis(self.dataset_dir / 'imagesTr')
         label_training_paths = get_niis(self.dataset_dir / 'labelsTr')
@@ -48,7 +48,7 @@ class DataModule(pl.LightningDataModule):
 
         return image_training_paths, label_training_paths, image_test_paths
 
-    def make_image_group_compatible(subject):
+    def make_image_group_compatible(self, subject):
         image_group = subject['image_group'][tio.DATA]
         image_group = image_group.unsqueeze(0)
         subject['image_group'][tio.DATA] = image_group
@@ -113,6 +113,9 @@ class DataModule(pl.LightningDataModule):
         self.train_set = tio.SubjectsDataset(train_subjects, transform=self.transform)
         self.val_set = tio.SubjectsDataset(val_subjects, transform=self.preprocess)
         self.test_set = tio.SubjectsDataset(self.test_subjects, transform=self.preprocess)
+        # self.train_set = tio.SubjectsDataset(train_subjects)
+        # self.val_set = tio.SubjectsDataset(val_subjects)
+        # self.test_set = tio.SubjectsDataset(self.test_subjects)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, self.batch_size)
