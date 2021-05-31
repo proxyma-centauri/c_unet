@@ -59,6 +59,7 @@ mkdir logs
     ├── architectures # Models
     │   ├── __init__.py
     │   ├── decoder.py
+    │   ├── dilated_dense.py
     │   ├── encoder.py
     │   └── unet.py
     ├── groups # Groups definition
@@ -101,7 +102,7 @@ mkdir logs
 
 # References
 
-Part of this repository was taken from the [Cubenet repository](https://github.com/danielewworrall/cubenet), which implements some model examples described in this ECCV18 article:
+Part of this repository was taken from the [Cubenet repository](https://github.com/danielewworrall/cubenet), which implements some model examples described in this [ECCV18 article](https://arxiv.org/abs/1804.04458):
 
 ```
 @inproceedings{Worrall18,
@@ -116,6 +117,7 @@ Part of this repository was taken from the [Cubenet repository](https://github.c
 ```
 
 The code in `./c_unet/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py), which corresponds to:
+
 ```
 @article{SwitchableNorm,
   title={Differentiable Learning-to-Normalize via Switchable Normalization},
@@ -125,8 +127,18 @@ The code in `./c_unet/utils/normalization/SwitchNorm3d` was taken from the [Swit
 }
 ```
 
-Some of the code in `./c_unet/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation).
+Some of the code in `./c_unet/architectures` was inspired from this [3D U-Net repository](https://github.com/JielongZ/3D-UNet-PyTorch-Implementation), as well as from the structure described in [Dilated Dense U-Net for Infant Hippocampus Subfield Segmentation](https://www.frontiersin.org/articles/10.3389/fninf.2019.00030/full):
 
+```
+@article{zhu_dilated_2019,
+	title = {Dilated Dense U-Net for Infant Hippocampus Subfield Segmentation},
+	url = {https://www.frontiersin.org/article/10.3389/fninf.2019.00030/full},
+	doi = {10.3389/fninf.2019.00030},
+	journaltitle = {Front. Neuroinform.},
+	author = {Zhu, Hancan and Shi, Feng and Wang, Li and Hung, Sheng-Che and Chen, Meng-Hsiang and Wang, Shuai and Lin, Weili and Shen, Dinggang},
+	year = {2019},
+}
+```
 
 # License
 
