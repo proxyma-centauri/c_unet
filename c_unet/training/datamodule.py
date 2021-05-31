@@ -48,21 +48,36 @@ class DataModule(pl.LightningDataModule):
 
         return image_training_paths, label_training_paths, image_test_paths
 
+    def make_image_group_compatible(subject):
+        image_group = subject['image_group'][tio.DATA]
+        image_group = image_group.unsqueeze(0)
+        subject['image_group'][tio.DATA] = image_group
+        return subject
+
     def prepare_data(self):
         image_training_paths, label_training_paths, image_test_paths = self.download_data()
         self.subjects = []
         self.test_subjects = []
 
         for image_path, label_path in zip(image_training_paths, label_training_paths):
-            # 'image' and 'label' are arbitrary names for the images
             subject = tio.Subject(
                 image=tio.ScalarImage(image_path),
+                image_group=tio.ScalarImage(image_path),
                 label=tio.LabelMap(label_path)
             )
+
+            # Adding dimension to make inputs usable with group convolutions
+            subject = self.make_image_group_compatible(subject)
+
             self.subjects.append(subject)
         
         for image_path in image_test_paths:
-            subject = tio.Subject(image=tio.ScalarImage(image_path))
+            subject = tio.Subject(
+                image=tio.ScalarImage(image_path),
+                image_group=tio.ScalarImage(image_path)
+            )
+            subject = self.make_image_group_compatible(subject)
+
             self.test_subjects.append(subject)
     
     def get_preprocessing_transform(self):
