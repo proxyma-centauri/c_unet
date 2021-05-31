@@ -8,28 +8,23 @@ from c_unet.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
 class DilatedDenseBlock(nn.Module):
-    """Encoding path of a U-Net architecture
+    """Dilated dense path for a U-Net architecture
 
     Args:
         - in_channels (int): Number of input channels   
+        - inter_channels (int): Number of intermediate channels   
+        - out_channels (int): Number of output channels   
 
         - kernel_size (int): Size of the kernel. Defaults to 3.
         - stride (Union[int, List[int]]): Stride of the convolution. Defaults to 1.
-        - padding (Union[str, int]): Zero-padding added to all three sides of the input. Defaults to 1.
-
-        - pool_size (int): Size of the pooling kernel. Defaults to 2.
-        - pool_stride (Union[int, List[int]]): Stride of the pooling. Defaults to 2.
-        - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at pooling. Defaults to 0.
 
         - dropout (float, optional) : Value of dropout to use. Defaults to 0.1
         - bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
-        - dilation (int, optional): Spacing between kernel elements. Defaults to 1.
         - nonlinearity (Optional[str], optional): Non-linear function to apply. Defaults to "relu".
         - normalization (Optional[str], optional): Normalization to apply. Defaults to "bn".
 
-        - model_depth (int): Depth of the encoding path. Defaults to 4.
-        - root_feat_maps (int): Base multiplier for output channels numberfor multiplication. Defaults to 16.
-        - num_conv_blocks (int): Number of convolutions per block at specific depth. Defaults to 2.
+        - num_step_block (int): Number of blocks. Defaults to 3.
+        - dilation_inscrease_step (int):Number of step per block with same dilation value. Defaults to 2.
 
         - group (str): Shorthand name representing the group to use
         - group_dim (int): Group dimension
