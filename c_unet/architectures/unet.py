@@ -76,6 +76,7 @@ class Unet(nn.Module):
         super(Unet, self).__init__()
 
         self.logger = logging.getLogger(__name__)
+        self.group = group
 
         # Model constants
         self.root_feat_maps = 32
