@@ -18,7 +18,7 @@ class LightningUnet(pl.LightningModule):
 
     def __init__(self,
                 # Training arguments
-                criterion: nn.functional, 
+                criterion: nn.Module, 
                 optimizer_class: Optimizer,
                 unet: nn.Module,
                 is_group: bool,
@@ -26,8 +26,8 @@ class LightningUnet(pl.LightningModule):
                 ):
         super(LightningUnet, self).__init__()
 
-        self.logger = logging.getLogger(__name__)
         
+        self.help_logger = logging.getLogger(__name__)
         self.lr = learning_rate
         self.criterion = criterion
         self.optimizer_class = optimizer_class

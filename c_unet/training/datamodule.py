@@ -13,12 +13,12 @@ class DataModule(pl.LightningDataModule):
     Args:
         - task (str): name of the task to perform. Corresponds to the name of the folder where the data is stored.
         - batch_size (int): size of the batch. Defaults to 16
-        - train_val_ratio (float): ratio of the data to use in validation. Defaults to 0.3
+        - train_val_ratio (float): ratio of the data to use in validation. Defaults to 0.7
     """
     def __init__(self, 
                     task: str,
                     batch_size: int = 16,
-                    train_val_ratio: float = 0.3):
+                    train_val_ratio: float = 0.7):
         super().__init__()
         self.task = task
         self.batch_size = batch_size
@@ -113,15 +113,12 @@ class DataModule(pl.LightningDataModule):
         self.train_set = tio.SubjectsDataset(train_subjects, transform=self.transform)
         self.val_set = tio.SubjectsDataset(val_subjects, transform=self.preprocess)
         self.test_set = tio.SubjectsDataset(self.test_subjects, transform=self.preprocess)
-        # self.train_set = tio.SubjectsDataset(train_subjects)
-        # self.val_set = tio.SubjectsDataset(val_subjects)
-        # self.test_set = tio.SubjectsDataset(self.test_subjects)
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, self.batch_size)
+        return DataLoader(self.train_set, self.batch_size, num_workers=10)
 
     def val_dataloader(self):
-        return DataLoader(self.val_set, self.batch_size)
+        return DataLoader(self.val_set, self.batch_size, num_workers=10)
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, self.batch_size)
+        return DataLoader(self.test_set, self.batch_size, num_workers=10)
