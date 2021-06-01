@@ -55,8 +55,9 @@ class LightningUnet(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         outputs, targets = self.infer_batch(batch)
-        _, targets = targets.max(1) # Voir avec Clément pourquoi on a besoin de ça déjà
+        _, targets = targets.max(1)
         loss = self.criterion(outputs, targets)
+        print(loss)
         self.log('train_loss', loss, prog_bar=True)
         return loss
     
@@ -64,6 +65,6 @@ class LightningUnet(pl.LightningModule):
         outputs, targets = self.infer_batch(batch)
         _, targets = targets.max(1)
         loss = self.criterion(outputs, targets)
-        self.log('train_loss', loss, prog_bar=True)
+        self.log('val_loss', loss, prog_bar=True)
         return loss
  
