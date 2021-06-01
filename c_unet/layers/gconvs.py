@@ -328,6 +328,13 @@ class GconvResBlock(nn.Module):
 
 class FinalGroupConvolution(nn.Module):
     """
+    Add a final convolution with 1x1x1 kernel.
+
+    Args:
+        - group_convolution (Module) : Group convolution to perform before final convolution
+        - group_dim : dimension of the sub group
+        - out_channels (int) Number of output channels
+        - final_activation (str) : Final activation layer
     """
     def __init__(self,
                 group_convolution: nn.Module,

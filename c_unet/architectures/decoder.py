@@ -7,7 +7,7 @@ from c_unet.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
 from c_unet.utils.interpolation.Interpolate import Interpolate
 
 from c_unet.layers.gconvs import GconvResBlock, FinalGroupConvolution
-from c_unet.layers.convs import ConvResBlock
+from c_unet.layers.convs import ConvResBlock, FinalConvolution
 
 
 class DecoderBlock(nn.Module):
@@ -144,7 +144,7 @@ class DecoderBlock(nn.Module):
                                                     out_channels,
                                                     final_activation)
                 else:
-                    self.final_conv = ConvResBlock(in_channels,
+                    final_conv = ConvResBlock(in_channels,
                                         out_channels,
                                         out_channels,
                                         kernel_size,
@@ -152,8 +152,11 @@ class DecoderBlock(nn.Module):
                                         padding,
                                         bias=bias,
                                         dilation=dilation,
-                                        nonlinearity=final_activation,
+                                        nonlinearity=nonlinearity,
                                         normalization=normalization)
+                    self.final_conv = FinalConvolution(final_conv, 
+                                            out_channels,
+                                            final_activation)
                 self.module_dict["final_conv"] = self.final_conv
 
     def forward(self, x, down_sampling_features):
