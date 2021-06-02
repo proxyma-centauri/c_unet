@@ -7,7 +7,6 @@ ISBI2012
 everything
 npys
 test_scripts
-environment.yml
 logs/
 
 *.tar
