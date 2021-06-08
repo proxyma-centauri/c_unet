@@ -57,7 +57,6 @@ class LightningUnet(pl.LightningModule):
         outputs, targets = self.infer_batch(batch)
         _, targets = targets.max(1)
         loss = self.criterion(outputs, targets)
-        print(loss)
         self.log('train_loss', loss, prog_bar=True)
         return loss
     
