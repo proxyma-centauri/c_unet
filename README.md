@@ -24,7 +24,7 @@ The following packages are prerequisites:
 source PATH_TO_CONDA/bin/activate
 ```
 
-Copy the `environment.yml.template` file, and nmae the copy `environment.yml`. You can edit `NAME_OF_ENV` to name the conda environment about to be created. The execute the following command to create the environment with the required packages installed
+Copy the `environment.yml.template` file, and name the copy `environment.yml`. You can edit `NAME_OF_ENV` to name the conda environment about to be created. Then execute the following command to create the environment with the required packages installed
 
 ```sh
 conda env create -f environment.yml

@@ -40,18 +40,7 @@ class ConvBlock(nn.Module):
         modules = [
             conv3d(in_channels, out_channels, kernel_size, stride, padding,
                    bias, dilation)
-        ]
-
-        # ! WARNING: You'll end up using a batch size of 1, we need another
-        # ! normalization layer (e.g. switchnorm).
-        if normalization:
-            if normalization == "bn":
-                modules.append(nn.BatchNorm3d(out_channels))
-            elif normalization == "sn":
-                modules.append(SwitchNorm3d(out_channels))
-            else:
-                raise ValueError(
-                    f"Invalid normalization value: {normalization}")
+        ] 
 
         if nonlinearity:
             if nonlinearity == "relu":
@@ -62,6 +51,15 @@ class ConvBlock(nn.Module):
                 modules.append(nn.Softmax(dim=1))
             else:
                 raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
+
+        if normalization:
+            if normalization == "bn":
+                modules.append(nn.BatchNorm3d(out_channels))
+            elif normalization == "sn":
+                modules.append(SwitchNorm3d(out_channels))
+            else:
+                raise ValueError(
+                    f"Invalid normalization value: {normalization}")
 
         self.block = nn.Sequential(*modules)
 
@@ -124,8 +122,8 @@ class ConvResBlock(nn.Module):
                             stride=1,
                             padding=0,
                             dilation=1,
-                            bias=False,
-                            nonlinearity="",
+                            bias=bias,
+                            nonlinearity=nonlinearity,
                             normalization=""
         )
 
@@ -158,3 +156,32 @@ class ConvResBlock(nn.Module):
         y = self.block_2(y)
         y = self.relu(y + z)
         return y
+
+
+class FinalConvolution(nn.Module):
+    """
+    Add a final convolution with 1x1x1 kernel.
+
+    Args:
+        - conv (Module) : Group convolution to perform before final convolution
+        - out_channels (int) Number of output channels
+        - final_activation (str) : Final activation layer
+    """
+    def __init__(self,
+                conv: nn.Module,
+                out_channels: int,
+                final_activation: str):
+        super(FinalConvolution, self).__init__()
+
+        self.conv = conv
+        self.final_conv = ConvBlock(out_channels,
+                                    out_channels,
+                                    kernel_size=1,
+                                    padding=0,
+                                    nonlinearity=final_activation,
+                                    normalization="")
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.final_conv(x)
+        return x

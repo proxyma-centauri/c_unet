@@ -187,17 +187,6 @@ class GconvBlock(nn.Module):
             self.b = nn.Parameter(torch.full((1,1), 0.01))
 
         other_modules = []
-
-        # ! WARNING: You'll end up using a batch size of 1, we need another
-        # ! normalization layer (e.g. switchnorm).
-        if normalization:
-            if normalization == "bn":
-                other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
-            elif normalization == "sn":
-                other_modules.append(ReshapedSwitchNorm(out_channels, group_dim))
-            else:
-                raise ValueError(
-                    f"Invalid normalization value: {normalization}")
         
         if nonlinearity:
             if nonlinearity == "relu":
@@ -208,6 +197,15 @@ class GconvBlock(nn.Module):
                 other_modules.append(nn.Softmax(dim=1))
             else:
                 raise ValueError(f"Invalid nonlinearity value: {nonlinearity}")
+
+        if normalization:
+            if normalization == "bn":
+                other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
+            elif normalization == "sn":
+                other_modules.append(ReshapedSwitchNorm(out_channels, group_dim))
+            else:
+                raise ValueError(
+                    f"Invalid normalization value: {normalization}")
 
         self.OtherModules = nn.Sequential(*other_modules)
 
@@ -282,8 +280,8 @@ class GconvResBlock(nn.Module):
                             padding=0,
                             dilation=1,
                             dropout=0,
-                            bias=False,
-                            nonlinearity="",
+                            bias=bias,
+                            nonlinearity=nonlinearity,
                             normalization=""
         )
 
@@ -328,6 +326,13 @@ class GconvResBlock(nn.Module):
 
 class FinalGroupConvolution(nn.Module):
     """
+    Add a final convolution with 1x1x1 kernel.
+
+    Args:
+        - group_convolution (Module) : Group convolution to perform before final convolution
+        - group_dim : dimension of the sub group
+        - out_channels (int) Number of output channels
+        - final_activation (str) : Final activation layer
     """
     def __init__(self,
                 group_convolution: nn.Module,
