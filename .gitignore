@@ -9,7 +9,7 @@ npys
 test_scripts
 logs/
 lightning_logs/
-
+.vscode
 *.tar
 *.png
 *.pkl

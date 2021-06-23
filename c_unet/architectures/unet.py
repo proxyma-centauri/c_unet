@@ -79,8 +79,8 @@ class Unet(nn.Module):
         self.group = group
 
         # Model constants
-        self.root_feat_maps = 32
-        self.num_feat_maps = 16      
+        self.root_feat_maps = 32 // group_dim
+        self.num_feat_maps = 16  // group_dim 
 
         self.encoder = EncoderBlock(in_channels=in_channels, 
                                     kernel_size=kernel_size,
