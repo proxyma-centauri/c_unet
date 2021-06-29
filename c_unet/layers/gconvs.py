@@ -8,227 +8,8 @@ from c_unet.layers.convs import ConvBlock
 from c_unet.utils.dropout.GaussianDropout import GaussianDropout
 from c_unet.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
 from c_unet.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
-from einops import rearrange
 from torch import nn
  
- 
-def get_rot_mat(theta, axis):
-    theta = torch.tensor(theta)
- 
-    if axis == 0:
-        mat = torch.tensor([[1, 0, 0], [0,
-                                        torch.cos(theta), -torch.sin(theta)],
-                            [0, torch.sin(theta),
-                             torch.cos(theta)]])
-    elif axis == 1:
-        mat = torch.tensor([[torch.cos(theta), 0,
-                             torch.sin(theta)], [0, 1, 0],
-                            [-torch.sin(theta), 0,
-                             torch.cos(theta)]])
-    elif axis == 2:
-        mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
-                            [torch.sin(theta),
-                             torch.cos(theta), 0], [0, 0, 1]])
-    else:
-        raise ValueError("Ton axe existe pas frère :) ")
- 
-    return rearrange(mat, "x y -> 1 1 x y")
-    # print(mat.shape)
-    # return mat
-
-
-def get_permutation_matrix(perm, dim):
-        """Creates and return the permutation matrix
-        
-        Args:
-            perm: numpy matrix (Cayley matrix of the group)
-        Returns:
-            float Tensor
-        """
-        # TODO : make cleaner
-        ndim = perm.shape[0]
-        mat = np.zeros((ndim, ndim))
-        for j in range(ndim):
-            mat[j,perm[j,dim]] = 1
-        return torch.from_numpy(mat).float()
-
-
-class Cconv(nn.Module):
- 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size=3,
-                 padding=1,
-                 stride=1,
-                 angles=[0., np.pi],
-                 first_conv=False
-                ):
-        super(Cconv, self).__init__()
-        g = len(angles) + 1
- 
-        self.padding = padding
-        self.stride = stride
-        cayley = np.asarray([[0,1,2,3],
-                             [1,0,3,2],
-                             [2,3,0,1],
-                             [3,2,1,0]])
- 
-        self.W = nn.Parameter(
-            torch.Tensor(out_channels, in_channels, kernel_size, kernel_size,
-                         kernel_size))
-        torch.nn.init.xavier_uniform_(self.W)
-        self.b = nn.Parameter(torch.ones(out_channels * g) * 0.1)
-
-        self.z_mats = [get_rot_mat(angle, 2) for angle in angles]
-        self.y_mats = [get_rot_mat(angle, 1) for angle in angles]
-        self.Wrots = []
-
-        for z_mat in self.z_mats:
-            # 2x 180. rotations about the z axis
-            W_rot_around_z = torch.matmul(z_mat, self.W)
-
-            # 2x 180. rotations about another axis
-            for y_mat in self.y_mats:
-                W_rot_around_both_axis = torch.matmul(y_mat, W_rot_around_z)
-                self.Wrots.append(W_rot_around_both_axis)
-
-        Ws = torch.stack(self.Wrots, dim=0)
-
-        U = []
-        if first_conv:
-            U = [Ws]
-        else:
-            WN = Ws.view(4, out_channels, 4, int(in_channels/4), kernel_size, kernel_size, kernel_size)
-
-            Wsh = Ws.shape
-            for i in range(4):
-                perm_mat = get_permutation_matrix(cayley, i).to(Ws.device)
-                w = WN[i,:,:,:,:,:]
-                w = w.reshape([-1, 4])
-                w = torch.matmul(w, perm_mat)
-                w = w.view([4, -1]+list(Wsh[2:])) 
-                U.append(w)
-        
-        self.WN = torch.stack(U, -1)
-        self.WN = rearrange(Ws, "g o i h w d -> (g o) i h w d")
-
- 
-    def forward(self, x):
-        return F.conv3d(x, self.WN, stride=self.stride, padding=self.padding)
- 
-
-class Gconv3d_2(nn.Module):
-    """Performs a discretized convolution on SO(3)
- 
-    Args:
-        group (str): Shorthand name representing the group to use
-        expected_group_dim (int): Expected group dimension, it is 
-            equal to the group dimension, except for the first Gconv of a series.
-        in_channels (int): Number of input channels
-        out_channels (int): Number of output channels
-        kernel_size (int, optional): Size of the kernel. Defaults to 3.
-        dilation (int, optional): Spacing between kernel elements. Defaults to 1.
-        stride (Union[int, List[int]], optional): Stride of the convolution. Defaults to 1.
-        padding (Union[str, int], optional): Zero-padding added to all three sides of the input. Defaults to 1.
-        dropout (float, optional): Value of dropout to use. Defaults to 0.1.
- 
-    Raises:
-        ValueError: Invalid padding value
-        ValueError: Unrecognized group
-    """
- 
-    def __init__(self,
-                 group: str,
-                 expected_group_dim: int,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: int = 3,
-                 dilation: int = 1,
-                 stride: Union[int, List[int]] = 1,
-                 padding: Union[str, int] = 1,
-                 dropout: float = 0.1):
-        super(Gconv3d_2, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.dilation = dilation
- 
-        if padding == "same":
-            self.p = (dilation * (kernel_size - 1) + 1) // 2
-        elif isinstance(padding, int):
-            self.p = padding
-        else:
-            raise ValueError(f"Invalid padding value: {padding}")
- 
-        if group == "V":
-            from c_unet.groups.V_group import V_group
-            self.group = V_group()
-            self.group_dim = self.group.group_dim
-        elif group == "S4":
-            from c_unet.groups.S4_group import S4_group
-            self.group = S4_group()
-            self.group_dim = self.group.group_dim
-        elif group == "T4":
-            from c_unet.groups.T4_group import T4_group
-            self.group = T4_group()
-            self.group_dim = self.group.group_dim
-        else:
-            raise ValueError(f"Group '{group}' is not recognized.")
- 
-        # Constants
- 
-        # W is the base filter. We rotate it 4 times for a p4 convolution over
-        # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
-        # one dimension in the channels.
-        self.W = nn.Parameter(
-            torch.Tensor(in_channels * expected_group_dim * out_channels, kernel_size,
-                kernel_size, kernel_size))
-        
-        torch.nn.init.xavier_uniform_(self.W)
- 
-        WN = self.group.get_Grotations(self.W)
-        WN = torch.stack(WN, 0)
- 
-        if expected_group_dim == 1:
-            self.WN = WN.view(self.out_channels*self.group_dim, self.in_channels, self.kernel_size,
-                              self.kernel_size, self.kernel_size)
-        else:
-            WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
-                        self.out_channels, self.kernel_size, self.kernel_size,
-                         self.kernel_size)
- 
-            WN_shifted = self.group.G_permutation(WN)
-            WN = torch.stack(WN_shifted, -1)
- 
-            self.WN = WN.view(self.out_channels * self.group_dim,
-                              self.in_channels * self.group_dim,
-                              self.kernel_size, self.kernel_size,
-                              self.kernel_size)
- 
-        self.dropout = GaussianDropout(p=dropout)
- 
-    def forward(self, x):
-        bs, c, g, h, w, d = x.shape
- 
-        # Reshape and rotate the io filters 4 times. Each input-output pair is
-        # rotated and stacked into a much bigger kernel
-        x = x.reshape(bs, c * g, h, w, d)
-
-        # Gaussian dropout on the weights
-        WN = self.dropout(self.WN.to(x.device))
- 
-        x = F.conv3d(x,
-                     WN,
-                     stride=self.stride,
-                     padding=self.p,
-                     dilation=self.dilation)
-        _, _, h, w, d = x.shape
-        x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
- 
-        return x
-
 
 class Gconv3d(nn.Module):
     """Performs a discretized convolution on SO(3)
@@ -295,25 +76,21 @@ class Gconv3d(nn.Module):
         # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
         # one dimension in the channels.
         self.W = nn.Parameter(
-            torch.empty([
-                in_channels * expected_group_dim * out_channels, kernel_size,
-                kernel_size, kernel_size
-            ])).cuda()
-        nn.init.kaiming_uniform_(self.W, nonlinearity="relu")
- 
+            torch.Tensor(in_channels * expected_group_dim * out_channels, kernel_size,
+                kernel_size, kernel_size))
         
-        WN = torch.stack(self.Wrots, dim=0)
-        # WN = self.group.get_Grotations(self.W)
+        torch.nn.init.xavier_uniform_(self.W)
  
+        WN = self.group.get_Grotations(self.W.clone())
         WN = torch.stack(WN, 0)
  
         if expected_group_dim == 1:
-            self.WN = WN.view(-1, self.in_channels, self.kernel_size,
+            self.WN = WN.view(self.out_channels*self.group_dim, self.in_channels, self.kernel_size,
                               self.kernel_size, self.kernel_size)
         else:
-            WN = WN.view(self.in_channels, self.kernel_size, self.kernel_size,
-                         self.kernel_size, self.group_dim, self.out_channels,
-                         self.group_dim)
+            WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
+                        self.out_channels, self.kernel_size, self.kernel_size,
+                         self.kernel_size)
  
             WN_shifted = self.group.G_permutation(WN)
             WN = torch.stack(WN_shifted, -1)
@@ -331,40 +108,10 @@ class Gconv3d(nn.Module):
         # Reshape and rotate the io filters 4 times. Each input-output pair is
         # rotated and stacked into a much bigger kernel
         x = x.reshape(bs, c * g, h, w, d)
- 
-        # WN = self.group.get_Grotations(self.W)
-        # WN = torch.stack(WN, 0)
- 
-        # if g == 1:
-        #     # A convolution on R^2 is just standard convolution with 3 extra
-        #     # output channels for each rotation of the filters
-        #     WN = WN.view(-1, self.in_channels, self.kernel_size,
-        #                  self.kernel_size, self.kernel_size)
-        # elif g == self.group_dim:
-        #     # A convolution on p4 is different to convolution on R^2. For each
-        #     # dimension of the group output, we need to both rotate the filters
-        #     # and circularly shift them in the input-group dimension. In a
-        #     # sense, we have to spiral the filters
-        #     WN = WN.view(self.in_channels, self.kernel_size, self.kernel_size,
-        #                  self.kernel_size, self.group_dim, self.out_channels,
-        #                  self.group_dim)
- 
-        #     WN_shifted = self.group.G_permutation(WN)
-        #     WN = torch.stack(WN_shifted, -1)
- 
-        #     # Shift over axis 6
-        #     # Stack the shifted tensors and reshape to 4D kernel
-        #     WN = WN.view(self.out_channels * self.group_dim,
-        #                  self.in_channels * self.group_dim, self.kernel_size,
-        #                  self.kernel_size, self.kernel_size)
-        # else:
-        #     raise ValueError(f"`group_dim` ({g}) doesn't match input data")
- 
-        # Convolve
+
         # Gaussian dropout on the weights
         WN = self.dropout(self.WN.to(x.device))
  
-        # TODO: check if we really need padding like `reflect` or `valid`
         x = F.conv3d(x,
                      WN,
                      stride=self.stride,
@@ -372,7 +119,7 @@ class Gconv3d(nn.Module):
                      dilation=self.dilation)
         _, _, h, w, d = x.shape
         x = x.view(bs, self.out_channels, self.group_dim, h, w, d)
- 
+
         return x
 
 

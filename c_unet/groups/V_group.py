@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import torch.nn.functional as F
 
 import torch
 from einops import rearrange
@@ -48,27 +49,49 @@ class V_group(object):
         return rearrange(mat, "x y -> 1 1 x y")
 
 
-    def get_Grotations(self, x):
+    def get_rot_mat(self, theta):
+        theta = torch.tensor(theta)
+        return torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
+                            [torch.sin(theta), torch.cos(theta), 0]])
+
+
+    def rot_img(self, x, theta):
+        rot_mat = self.get_rot_mat(theta)[None, ...].repeat(x.shape[0],1,1)
+        grid = F.affine_grid(rot_mat, x.size())
+        x_rot = F.grid_sample(x, grid)
+        return x_rot
+
+    
+    def get_Grotations(self, W):
         """Rotate the tensor x with all 4 Klein Vierergruppe rotations
 
         Args:
-            x: [n_channels, h,w,d]
+            W: [n_channels, h,w,d]
         Returns:
             list of 4 rotations of x [[n_channels,h,w,d],....]
         """
         angles = [0., np.pi]
-        z_mats = [self.get_rot_mat(angle, 2) for angle in angles]
-        y_mats = [self.get_rot_mat(angle, 1) for angle in angles]
+
         Wrots = []
 
-        for z_mat in z_mats:
+        for z_angle in angles:
             # 2x 180. rotations about the z axis
-            W_rot_around_z = torch.matmul(z_mat, x)
+            perm = [0,2,1,3]
+
+            Wz_1 = W.permute(perm)
+            Wz_2 = self.rot_img(Wz_1, z_angle)
+            W_rot_around_z = Wz_2.permute(perm)
 
             # 2x 180. rotations about another axis
-            for y_mat in y_mats:
-                W_rot_around_both_axis = torch.matmul(y_mat, W_rot_around_z)
+            for y_angle in angles:
+                perm = [0,3,2,1]
+
+                Wy_1 = W_rot_around_z.permute(perm)
+                Wy_2 = self.rot_img(Wy_1, y_angle)
+                W_rot_around_both_axis = Wy_2.permute(perm)
+
                 Wrots.append(W_rot_around_both_axis)
+        
         return Wrots
 
 
@@ -84,13 +107,12 @@ class V_group(object):
         cayley = self.cayleytable
         Wsh = W.shape
         U = []
-
         for i in range(4):
             perm_mat = self.get_permutation_matrix(cayley, i).to(W.device)
-            w = W[i,:,:,:,:,:]
+            w = W[i,:,:,:,:,:,:]
             w = w.reshape([-1, 4])
             w = torch.matmul(w, perm_mat)
-            w = w.view([4, -1]+list(Wsh[2:])) 
+            w = w.view([-1]+list(Wsh[2:])) 
             U.append(w)
         return U
 
