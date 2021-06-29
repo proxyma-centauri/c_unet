@@ -51,18 +51,16 @@ class LightningUnet(pl.LightningModule):
     def infer_batch(self, batch):
         inputs, labels = self.prepare_batch(batch)
         outputs = self.forward(inputs)
-        return outputs, labels
+        return outputs.float(), labels
 
     def training_step(self, batch, batch_idx):
         outputs, targets = self.infer_batch(batch)
-        _, targets = targets.max(1)
         loss = self.criterion(outputs, targets)
         self.log('train_loss', loss, prog_bar=True)
         return loss
     
     def validation_step(self, batch, batch_idx):
         outputs, targets = self.infer_batch(batch)
-        _, targets = targets.max(1)
         loss = self.criterion(outputs, targets)
         self.log('val_loss', loss, prog_bar=True)
         return loss
