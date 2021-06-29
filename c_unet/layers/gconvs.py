@@ -191,6 +191,8 @@ class GconvBlock(nn.Module):
         if nonlinearity:
             if nonlinearity == "relu":
                 other_modules.append(nn.ReLU(inplace=True))
+            elif nonlinearity == "leaky-relu":
+                other_modules.append(nn.LeakyReLU(inplace=True))
             elif nonlinearity == "sigmoid":
                 other_modules.append(nn.Sigmoid())
             elif nonlinearity == "softmax":

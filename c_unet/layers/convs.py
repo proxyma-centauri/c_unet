@@ -45,6 +45,8 @@ class ConvBlock(nn.Module):
         if nonlinearity:
             if nonlinearity == "relu":
                 modules.append(nn.ReLU(inplace=True))
+            elif nonlinearity == "leaky-relu":
+                modules.append(nn.LeakyReLU(inplace=True))
             elif nonlinearity == "sigmoid":
                 modules.append(nn.Sigmoid())
             elif nonlinearity == "softmax":
