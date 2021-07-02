@@ -51,7 +51,7 @@ class GMaxPool3d(nn.Module):
         return rearrange(x, "(b g) c h w d -> b c g h w d", g=g)
 
 
-class AvgPool3d(nn.Module):
+class GAvgPool3d(nn.Module):
     """AvgPool over c*g"""
     def __init__(self,
                  num_group: int = 4,
