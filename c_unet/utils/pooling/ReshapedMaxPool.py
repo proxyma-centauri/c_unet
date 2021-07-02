@@ -49,3 +49,22 @@ class GMaxPool3d(nn.Module):
         x = rearrange(x, "b c g h w d -> (b g) c h w d")
         x = self.pool(x)
         return rearrange(x, "(b g) c h w d -> b c g h w d", g=g)
+
+
+class AvgPool3d(nn.Module):
+    """AvgPool over c*g"""
+    def __init__(self,
+                 num_group: int = 4,
+                 kernel_size: int = 3,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1):
+        super(ReshapedMaxPool, self).__init__()
+        self.g = num_group
+        self.pool = nn.AvgPool3d(kernel_size,
+                                 stride,
+                                 padding)
+
+    def forward(self, x):
+        x = rearrange(x, "b c g h w d -> b (c g) h w d")
+        x = self.pool(x)
+        return rearrange(x, "b (c g) h w d -> b c g h w d", g=g)
