@@ -39,7 +39,7 @@ class GMaxPool3d(nn.Module):
                  kernel_size: int = 3,
                  stride: Union[int, List[int]] = 1,
                  padding: Union[str, int] = 1):
-        super(ReshapedMaxPool, self).__init__()
+        super(GMaxPool3d, self).__init__()
         self.g = num_group
         self.pool = nn.MaxPool3d(kernel_size,
                                  stride,
@@ -58,7 +58,7 @@ class GAvgPool3d(nn.Module):
                  kernel_size: int = 3,
                  stride: Union[int, List[int]] = 1,
                  padding: Union[str, int] = 1):
-        super(ReshapedMaxPool, self).__init__()
+        super(GAvgPool3d, self).__init__()
         self.g = num_group
         self.pool = nn.AvgPool3d(kernel_size,
                                  stride,
