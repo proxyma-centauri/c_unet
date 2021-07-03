@@ -1,6 +1,6 @@
 import logging
 
-from einops import rearrange
+from einops import rearrange, reduce
 from torch import nn
 from typing import List, Union
 
@@ -49,6 +49,40 @@ class GMaxPool3d(nn.Module):
         x = rearrange(x, "b c g h w d -> (b g) c h w d")
         x = self.pool(x)
         return rearrange(x, "(b g) c h w d -> b c g h w d", g=self.g)
+
+
+class GPool3d(nn.Module):
+    """Pool over channels using einops.
+    
+    pool_over: `c`, `g`, or `cg`
+    reduction: `max` or `mean`
+    """
+    def __init__(self,
+                 pool_over: str = "c",
+                 reduction: str = "mean",
+                 reduction_factor: int = 2):
+        super(GPool3d, self).__init__()
+        self.pool_over = pool_over
+        self.reduction = reduction
+        self.reduction_factor = reduction_factor
+
+    def forward(self, x):
+        if self.pool_over == "c":
+            return reduce(x,
+                          "b (c c2) g h w d -> b c g h w d",
+                          reduction=self.reduction,
+                          c2=self.reduction_factor)
+        elif self.pool_over == "g":
+            return reduce(x,
+                          "b c (g g2) h w d -> b c g h w d",
+                          reduction=self.reduction,
+                          g2=self.reduction_factor)
+        elif self.pool_over == "cg":
+            return reduce(x,
+                          "b (c c2) (g g2) h w d -> b c g h w d",
+                          reduction=self.reduction,
+                          c2=self.reduction_factor,
+                          g2=self.reduction_factor)
 
 
 class GAvgPool3d(nn.Module):
