@@ -48,7 +48,7 @@ class GMaxPool3d(nn.Module):
     def forward(self, x):
         x = rearrange(x, "b c g h w d -> (b g) c h w d")
         x = self.pool(x)
-        return rearrange(x, "(b g) c h w d -> b c g h w d", g=g)
+        return rearrange(x, "(b g) c h w d -> b c g h w d", g=self.g)
 
 
 class GAvgPool3d(nn.Module):
@@ -67,4 +67,4 @@ class GAvgPool3d(nn.Module):
     def forward(self, x):
         x = rearrange(x, "b c g h w d -> b (c g) h w d")
         x = self.pool(x)
-        return rearrange(x, "b (c g) h w d -> b c g h w d", g=g)
+        return rearrange(x, "b (c g) h w d -> b c g h w d", g=self.g)
