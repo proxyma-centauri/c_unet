@@ -1,15 +1,15 @@
 import logging
 from typing import List, Optional, Union
- 
-import numpy as np
+
 import torch
 import torch.nn.functional as F
+from torch import nn
+
 from c_unet.layers.convs import ConvBlock
 from c_unet.utils.dropout.GaussianDropout import GaussianDropout
 from c_unet.utils.normalization.ReshapedBatchNorm import ReshapedBatchNorm
 from c_unet.utils.normalization.ReshapedSwitchNorm import ReshapedSwitchNorm
-from torch import nn
- 
+
 
 class Gconv3d(nn.Module):
     """Performs a discretized convolution on SO(3)
@@ -30,7 +30,6 @@ class Gconv3d(nn.Module):
         ValueError: Invalid padding value
         ValueError: Unrecognized group
     """
- 
     def __init__(self,
                  group: str,
                  expected_group_dim: int,
@@ -47,14 +46,14 @@ class Gconv3d(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.dilation = dilation
- 
+
         if padding == "same":
             self.p = (dilation * (kernel_size - 1) + 1) // 2
         elif isinstance(padding, int):
             self.p = padding
         else:
             raise ValueError(f"Invalid padding value: {padding}")
- 
+
         if group == "V":
             from c_unet.groups.V_group import V_group
             self.group = V_group()
@@ -69,49 +68,50 @@ class Gconv3d(nn.Module):
             self.group_dim = self.group.group_dim
         else:
             raise ValueError(f"Group '{group}' is not recognized.")
- 
+
         # Constants
- 
+
         # W is the base filter. We rotate it 4 times for a p4 convolution over
         # R^2. For a p4 convolution over p4, we rotate it, and then shift up by
         # one dimension in the channels.
         self.W = nn.Parameter(
-            torch.Tensor(in_channels * expected_group_dim * out_channels, kernel_size,
-                kernel_size, kernel_size))
-        
+            torch.Tensor(in_channels * expected_group_dim * out_channels,
+                         kernel_size, kernel_size, kernel_size))
+
         torch.nn.init.xavier_uniform_(self.W)
- 
+
         WN = self.group.get_Grotations(self.W.clone())
         WN = torch.stack(WN, 0)
- 
+
         if expected_group_dim == 1:
-            self.WN = WN.view(self.out_channels*self.group_dim, self.in_channels, self.kernel_size,
+            self.WN = WN.view(self.out_channels * self.group_dim,
+                              self.in_channels, self.kernel_size,
                               self.kernel_size, self.kernel_size)
         else:
             WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
-                        self.out_channels, self.kernel_size, self.kernel_size,
+                         self.out_channels, self.kernel_size, self.kernel_size,
                          self.kernel_size)
- 
+
             WN_shifted = self.group.G_permutation(WN)
             WN = torch.stack(WN_shifted, -1)
- 
+
             self.WN = WN.view(self.out_channels * self.group_dim,
                               self.in_channels * self.group_dim,
                               self.kernel_size, self.kernel_size,
                               self.kernel_size)
- 
+
         self.dropout = GaussianDropout(p=dropout)
- 
+
     def forward(self, x):
         bs, c, g, h, w, d = x.shape
- 
+
         # Reshape and rotate the io filters 4 times. Each input-output pair is
         # rotated and stacked into a much bigger kernel
         x = x.reshape(bs, c * g, h, w, d)
 
         # Gaussian dropout on the weights
         WN = self.dropout(self.WN.to(x.device))
- 
+
         x = F.conv3d(x,
                      WN,
                      stride=self.stride,
@@ -147,43 +147,39 @@ class GconvBlock(nn.Module):
         ValueError: Invalid nonlinearity value
     """
     def __init__(self,
-                group: str,
-                expected_group_dim: int,
-                in_channels: int,
-                out_channels: int,
-                kernel_size: int = 3,
-                stride: Union[int, List[int]] = 1,
-                padding: Union[str, int] = 1,
-                dilation: int = 1,
-                dropout: float = 0.1,
-                bias: Optional[bool] = True,
-                nonlinearity: Optional[str] = "relu",
-                normalization: Optional[str] = "bn"):
+                 group: str,
+                 expected_group_dim: int,
+                 in_channels: int,
+                 out_channels: int,
+                 kernel_size: int = 3,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1,
+                 dilation: int = 1,
+                 dropout: float = 0.1,
+                 bias: Optional[bool] = True,
+                 nonlinearity: Optional[str] = "relu",
+                 normalization: Optional[str] = "bn"):
         super(GconvBlock, self).__init__()
         self.bias = bias
-        
-        self.Gconv = Gconv3d(group,
-                    expected_group_dim,
-                    in_channels,
-                    out_channels,
-                    kernel_size,
-                    dilation,
-                    stride,
-                    padding,
-                    dropout)
+
+        self.Gconv = Gconv3d(group, expected_group_dim, in_channels,
+                             out_channels, kernel_size, dilation, stride,
+                             padding, dropout)
 
         group_dim = self.Gconv.group_dim
 
         if bias:
-            self.b = nn.Parameter(torch.full((1,1), 0.01))
+            self.b = nn.Parameter(torch.full((1, 1), 0.01))
 
         other_modules = []
-        
+
         if nonlinearity:
             if nonlinearity == "relu":
                 other_modules.append(nn.ReLU(inplace=True))
             elif nonlinearity == "leaky-relu":
                 other_modules.append(nn.LeakyReLU(inplace=True))
+            elif nonlinearity == "elu":
+                other_modules.append(nn.ELU(inplace=True))
             elif nonlinearity == "sigmoid":
                 other_modules.append(nn.Sigmoid())
             elif nonlinearity == "softmax":
@@ -193,9 +189,11 @@ class GconvBlock(nn.Module):
 
         if normalization:
             if normalization == "bn":
-                other_modules.append(ReshapedBatchNorm(out_channels, group_dim))
+                other_modules.append(ReshapedBatchNorm(out_channels,
+                                                       group_dim))
             elif normalization == "sn":
-                other_modules.append(ReshapedSwitchNorm(out_channels, group_dim))
+                other_modules.append(
+                    ReshapedSwitchNorm(out_channels, group_dim))
             else:
                 raise ValueError(
                     f"Invalid normalization value: {normalization}")
@@ -241,22 +239,22 @@ class GconvResBlock(nn.Module):
         ValueError: Invalid nonlinearity value
     """
     def __init__(self,
-                group: str,
-                group_dim: int,
-                in_channels: int,
-                inter_channels: int,
-                out_channels: int,
-                is_first_conv: bool = False,
-                kernel_size: int = 3,
-                stride: Union[int, List[int]] = 1,
-                padding: Union[str, int] = 1,
-                dilation: int = 1,
-                dropout: float = 0.1,
-                first_kernel_size: Optional[int] = None,
-                first_padding: Optional[int] = None,
-                bias: Optional[bool] = True,
-                nonlinearity: Optional[str] = "relu",
-                normalization: Optional[str] = "bn"):
+                 group: str,
+                 group_dim: int,
+                 in_channels: int,
+                 inter_channels: int,
+                 out_channels: int,
+                 is_first_conv: bool = False,
+                 kernel_size: int = 3,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1,
+                 dilation: int = 1,
+                 dropout: float = 0.1,
+                 first_kernel_size: Optional[int] = None,
+                 first_padding: Optional[int] = None,
+                 bias: Optional[bool] = True,
+                 nonlinearity: Optional[str] = "relu",
+                 normalization: Optional[str] = "bn"):
         super(GconvResBlock, self).__init__()
         self.logger = logging.getLogger(__name__)
 
@@ -265,48 +263,50 @@ class GconvResBlock(nn.Module):
         other_padding = first_padding if first_padding is not None else padding
 
         self.match_channels = GconvBlock(group,
-                            expected_group_dim,
-                            in_channels,
-                            out_channels,
-                            kernel_size=1,
-                            stride=1,
-                            padding=0,
-                            dilation=1,
-                            dropout=0,
-                            bias=bias,
-                            nonlinearity=nonlinearity,
-                            normalization=""
-        )
+                                         expected_group_dim,
+                                         in_channels,
+                                         out_channels,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0,
+                                         dilation=1,
+                                         dropout=0,
+                                         bias=bias,
+                                         nonlinearity=nonlinearity,
+                                         normalization="")
 
         self.G_block_1 = GconvBlock(group,
-                            expected_group_dim,
-                            in_channels,
-                            inter_channels,
-                            other_kernel_size,
-                            stride,
-                            other_padding,
-                            dilation,
-                            dropout,
-                            bias=bias,
-                            nonlinearity=nonlinearity,
-                            normalization=normalization
-        )
-        self.G_block_2 = GconvBlock(group,
-                            group_dim,
-                            inter_channels,
-                            out_channels,
-                            kernel_size,
-                            stride,
-                            padding,
-                            dilation,
-                            dropout,
-                            bias=bias,
-                            nonlinearity="", # No nonlinearity
-                            normalization=normalization
-        )
+                                    expected_group_dim,
+                                    in_channels,
+                                    inter_channels,
+                                    other_kernel_size,
+                                    stride,
+                                    other_padding,
+                                    dilation,
+                                    dropout,
+                                    bias=bias,
+                                    nonlinearity=nonlinearity,
+                                    normalization=normalization)
+        self.G_block_2 = GconvBlock(
+            group,
+            group_dim,
+            inter_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            dropout,
+            bias=bias,
+            nonlinearity="",  # No nonlinearity
+            normalization=normalization)
 
-        self.relu = nn.ReLU()
-        
+        if nonlinearity == "leaky-relu":
+            self.relu = nn.LeakyReLU(inplace=True)
+        elif nonlinearity == "elu":
+            self.relu = nn.ELU(inplace=True)
+        else:
+            self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         z = self.match_channels(x)
@@ -327,27 +327,24 @@ class FinalGroupConvolution(nn.Module):
         - out_channels (int) Number of output channels
         - final_activation (str) : Final activation layer
     """
-    def __init__(self,
-                group_convolution: nn.Module,
-                group_dim: int,
-                out_channels: int,
-                final_activation: str):
+    def __init__(self, group_convolution: nn.Module, group_dim: int,
+                 out_channels: int, final_activation: str):
         super(FinalGroupConvolution, self).__init__()
 
         self.g_conv = group_convolution
-        self.reshaping_conv = ConvBlock(out_channels*group_dim,
-                                    out_channels,
-                                    kernel_size=1,
-                                    padding=0,
-                                    nonlinearity=final_activation,
-                                    normalization="")
+        self.reshaping_conv = ConvBlock(out_channels * group_dim,
+                                        out_channels,
+                                        kernel_size=1,
+                                        padding=0,
+                                        nonlinearity=final_activation,
+                                        normalization="")
 
     def forward(self, x):
         x = self.g_conv(x)
 
         # Reshaping input
         bs, c, g, h, w, d = x.shape
-        x = x.reshape(bs, c*g, h, w, d)
+        x = x.reshape(bs, c * g, h, w, d)
 
         # Removing group dimension
         x = self.reshaping_conv(x)

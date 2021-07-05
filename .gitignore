@@ -19,3 +19,4 @@ lightning_logs/
 *.npz
 *.txt
 *.swp
+tb_logs/
