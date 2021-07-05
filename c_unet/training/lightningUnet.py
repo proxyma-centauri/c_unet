@@ -61,16 +61,14 @@ class LightningUnet(pl.LightningModule):
         outputs, targets = self.infer_batch(batch)
         loss = self.criterion(outputs, targets)
         self.log('train_loss', loss, prog_bar=True)
-        self.logger.experiment.add_scalar("Train loss", loss,
-                                          self.current_epoch)
+        self.logger.experiment.add_scalar("Train loss", loss, batch_idx)
         return loss
 
     def validation_step(self, batch, batch_idx):
         outputs, targets = self.infer_batch(batch)
         loss = self.criterion(outputs, targets)
         self.log('val_loss', loss, prog_bar=True)
-        self.logger.experiment.add_scalar("Validation loss", loss,
-                                          self.current_epoch)
+        self.logger.experiment.add_scalar("Validation loss", loss, batch_idx)
         return loss
 
     def training_epoch_end(self, outputs):
