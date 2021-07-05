@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from c_unet.layers.gconvs import GconvResBlock
 from c_unet.layers.convs import ConvResBlock
-from c_unet.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
+from c_unet.utils.pooling.GPool3d import GPool3d
 
 
 class EncoderBlock(nn.Module):
@@ -21,6 +21,8 @@ class EncoderBlock(nn.Module):
         - pool_size (int): Size of the pooling kernel. Defaults to 2.
         - pool_stride (Union[int, List[int]]): Stride of the pooling. Defaults to 2.
         - pool_padding (Union[str, int]): Zero-padding added to all three sides of the input at pooling. Defaults to 0.
+        - pool_reduction : Type of pooling for G-CNNs. Defualts to "max".
+        - pool_factor : For G-cnns, reduction factor of the pooling. Defaults to 2.
 
         - dropout (float, optional) : Value of dropout to use. Defaults to 0.1
         - bias (bool, optional): If True, adds a learnable bias to the output. Defaults to True.
@@ -48,9 +50,11 @@ class EncoderBlock(nn.Module):
             stride: Union[int, List[int]] = 1,
             padding: Union[str, int] = 1,
             # Pooling
-            pool_size: int = 2,
-            pool_stride: Union[int, List[int]] = 2,
-            pool_padding: Union[str, int] = 0,
+            pool_size: Optional[int] = 2,
+            pool_stride: Optional[Union[str, int]] = 2,
+            pool_padding: Optional[Union[str, int]] = 0,
+            pool_reduction: Optional[str] = "mean",
+            pool_factor: Optional[int] = 2,
             # Convolution arguments
             dropout: Optional[bool] = 0.1,
             bias: bool = True,
@@ -116,9 +120,9 @@ class EncoderBlock(nn.Module):
                 break
             else:
                 if group:
-                    self.pooling = ReshapedMaxPool(kernel_size=pool_size,
-                                                   stride=pool_stride,
-                                                   padding=pool_padding)
+                    self.pooling = GPool3d(pool_over="hwd",
+                                           reduction=pool_reduction,
+                                           reduction_factor=pool_factor)
                 else:
                     self.pooling = nn.MaxPool3d(kernel_size=pool_size,
                                                 stride=pool_stride,

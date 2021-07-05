@@ -4,7 +4,6 @@ import torch.nn as nn
 
 from c_unet.layers.gconvs import GconvResBlock
 from c_unet.layers.convs import ConvResBlock
-from c_unet.utils.pooling.ReshapedMaxPool import ReshapedMaxPool
 
 
 class DilatedDenseBlock(nn.Module):
@@ -33,25 +32,26 @@ class DilatedDenseBlock(nn.Module):
         ValueError: Invalid normalization value
         ValueError: Invalid nonlinearity value
     """
-    def __init__(self, 
-                # Channels
-                in_channels: int,
-                inter_channels: int,
-                out_channels: int,
-                # Kernel arguments
-                kernel_size: int = 3,
-                stride: Union[int, List[int]] = 1,
-                # Convolution arguments
-                dropout: Optional[bool] = 0.1,
-                bias: bool = True,
-                nonlinearity: Optional[str] = "relu",
-                normalization: Optional[str] = "bn",
-                # Model
-                num_steps_block: int = 3,
-                dilation_increase_step: int = 2,
-                # Group arguments (by default, no group)
-                group: Union[str, None]=None,
-                group_dim: int=0):
+    def __init__(
+            self,
+            # Channels
+            in_channels: int,
+            inter_channels: int,
+            out_channels: int,
+            # Kernel arguments
+            kernel_size: int = 3,
+            stride: Union[int, List[int]] = 1,
+            # Convolution arguments
+            dropout: Optional[bool] = 0.1,
+            bias: bool = True,
+            nonlinearity: Optional[str] = "relu",
+            normalization: Optional[str] = "bn",
+            # Model
+            num_steps_block: int = 3,
+            dilation_increase_step: int = 2,
+            # Group arguments (by default, no group)
+            group: Union[str, None] = None,
+            group_dim: int = 0):
         super(DilatedDenseBlock, self).__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -64,39 +64,39 @@ class DilatedDenseBlock(nn.Module):
                 padding = (dilation * (kernel_size - 1) + 1) // 2
 
                 if group:
-                    self.conv_block = GconvResBlock(group,
-                                            group_dim,
-                                            in_channels,
-                                            inter_channels,
-                                            out_channels,
-                                            False,
-                                            kernel_size=kernel_size,
-                                            first_kernel_size=1,
-                                            stride=stride,
-                                            padding=padding,
-                                            dilation=dilation,
-                                            dropout=dropout,
-                                            first_padding=0,
-                                            bias=bias,
-                                            nonlinearity=nonlinearity,
-                                            normalization=normalization)
+                    self.conv_block = GconvResBlock(
+                        group,
+                        group_dim,
+                        in_channels,
+                        inter_channels,
+                        out_channels,
+                        False,
+                        kernel_size=kernel_size,
+                        first_kernel_size=1,
+                        stride=stride,
+                        padding=padding,
+                        dilation=dilation,
+                        dropout=dropout,
+                        first_padding=0,
+                        bias=bias,
+                        nonlinearity=nonlinearity,
+                        normalization=normalization)
                 else:
                     self.conv_block = ConvResBlock(in_channels,
-                                            inter_channels,
-                                            out_channels,
-                                            kernel_size=kernel_size,
-                                            first_kernel_size=1,
-                                            stride=stride,
-                                            padding=padding,
-                                            bias=bias,
-                                            first_padding=0,
-                                            dilation=dilation,
-                                            nonlinearity=nonlinearity,
-                                            normalization=normalization)
+                                                   inter_channels,
+                                                   out_channels,
+                                                   kernel_size=kernel_size,
+                                                   first_kernel_size=1,
+                                                   stride=stride,
+                                                   padding=padding,
+                                                   bias=bias,
+                                                   first_padding=0,
+                                                   dilation=dilation,
+                                                   nonlinearity=nonlinearity,
+                                                   normalization=normalization)
                 self.module_list.append(self.conv_block)
-        
-        self.dilated_dense = nn.Sequential(*self.module_list)
 
+        self.dilated_dense = nn.Sequential(*self.module_list)
 
     def forward(self, x):
         return self.dilated_dense(x)
