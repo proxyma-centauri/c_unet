@@ -72,6 +72,11 @@ mkdir logs
     │   ├── __init__.py
     │   ├── convs.py
     │   └── gconvs.py
+    ├── training # Pytorch lightning models and structures definition
+    │   ├── datamodule.py
+    │   ├── __init__.py
+    │   ├── lightningUnet.py
+    │   └── losses.py
     └── utils
         ├── dropout # Custom dropout layers
         │   ├── GaussianDropout.py
@@ -95,8 +100,7 @@ mkdir logs
         │   └── SwitchNorm3d.py
         └── pooling # Custom pooling layers
             ├── __init__.py
-            ├── ReshapedAvgPool.py
-            └── ReshapedMaxPool.py
+            └── GPool3d.py
 ```
 
 
