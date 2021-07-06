@@ -23,18 +23,17 @@ class V_group(object):
                              [3, 2, 1, 0]])
         return cayley
 
-    def get_rot_mat(self, theta):
+    def get_rot_mat(self, theta, device):
         theta = torch.tensor(theta)
         rot_mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
                                 [torch.sin(theta),
-                                 torch.cos(theta), 0]])
-        if torch.cuda.is_available():
-            rot_mat = rot_mat.to("cuda:0")
-
+                                 torch.cos(theta), 0]]).to(device)
         return rot_mat
 
     def rot_img(self, x, theta):
-        rot_mat = self.get_rot_mat(theta)[None, ...].repeat(x.shape[0], 1, 1)
+        rot_mat = self.get_rot_mat(theta,
+                                   x.device)[None,
+                                             ...].repeat(x.shape[0], 1, 1)
         grid = F.affine_grid(rot_mat, x.size())
         x_rot = F.grid_sample(x, grid)
         return x_rot
