@@ -23,33 +23,15 @@ class V_group(object):
                              [3, 2, 1, 0]])
         return cayley
 
-    def get_rot_mat(self, theta, axis):
-        theta = torch.tensor(theta)
-
-        if axis == 0:
-            mat = torch.tensor([[1, 0, 0],
-                                [0, torch.cos(theta), -torch.sin(theta)],
-                                [0, torch.sin(theta),
-                                 torch.cos(theta)]])
-        elif axis == 1:
-            mat = torch.tensor([[torch.cos(theta), 0,
-                                 torch.sin(theta)], [0, 1, 0],
-                                [-torch.sin(theta), 0,
-                                 torch.cos(theta)]])
-        elif axis == 2:
-            mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
-                                [torch.sin(theta),
-                                 torch.cos(theta), 0], [0, 0, 1]])
-        else:
-            raise ValueError("This axis does not exist")
-
-        return rearrange(mat, "x y -> 1 1 x y")
-
     def get_rot_mat(self, theta):
         theta = torch.tensor(theta)
-        return torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
-                             [torch.sin(theta),
-                              torch.cos(theta), 0]])
+        rot_mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
+                                [torch.sin(theta),
+                                 torch.cos(theta), 0]])
+        if torch.cuda.is_available():
+            rot_mat = rot_mat.to("cuda:0")
+
+        return rot_mat
 
     def rot_img(self, x, theta):
         rot_mat = self.get_rot_mat(theta)[None, ...].repeat(x.shape[0], 1, 1)

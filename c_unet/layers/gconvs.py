@@ -80,26 +80,6 @@ class Gconv3d(nn.Module):
 
         torch.nn.init.xavier_uniform_(self.W)
 
-        WN = self.group.get_Grotations(self.W.clone())
-        WN = torch.stack(WN, 0)
-
-        if expected_group_dim == 1:
-            self.WN = WN.view(self.out_channels * self.group_dim,
-                              self.in_channels, self.kernel_size,
-                              self.kernel_size, self.kernel_size)
-        else:
-            WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
-                         self.out_channels, self.kernel_size, self.kernel_size,
-                         self.kernel_size)
-
-            WN_shifted = self.group.G_permutation(WN)
-            WN = torch.stack(WN_shifted, -1)
-
-            self.WN = WN.view(self.out_channels * self.group_dim,
-                              self.in_channels * self.group_dim,
-                              self.kernel_size, self.kernel_size,
-                              self.kernel_size)
-
         self.dropout = GaussianDropout(p=dropout)
 
     def forward(self, x):
@@ -109,8 +89,26 @@ class Gconv3d(nn.Module):
         # rotated and stacked into a much bigger kernel
         x = x.reshape(bs, c * g, h, w, d)
 
+        WN = self.group.get_Grotations(self.W.clone().to(x.device))
+        WN = torch.stack(WN, 0)
+
+        if g == 1:
+            WN = WN.view(self.out_channels * self.group_dim, self.in_channels,
+                         self.kernel_size, self.kernel_size, self.kernel_size)
+        else:
+            WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
+                         self.out_channels, self.kernel_size, self.kernel_size,
+                         self.kernel_size)
+
+            WN_shifted = self.group.G_permutation(WN)
+            WN = torch.stack(WN_shifted, -1)
+
+            WN = WN.view(self.out_channels * self.group_dim,
+                         self.in_channels * self.group_dim, self.kernel_size,
+                         self.kernel_size, self.kernel_size)
+
         # Gaussian dropout on the weights
-        WN = self.dropout(self.WN.to(x.device))
+        WN = self.dropout(WN)
 
         x = F.conv3d(x,
                      WN,
