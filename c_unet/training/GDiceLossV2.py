@@ -1,5 +1,5 @@
 """
-Loss functions taken from
+GDiceLossV2 function taken from
 `https://github.com/JunMa11/SegLoss`
 """
 
@@ -23,7 +23,6 @@ def flatten(tensor):
 
 
 class GDiceLossV2(nn.Module):
-
     def __init__(self, apply_nonlin=None, smooth=1e-5):
         """
         Generalized Dice;
