@@ -15,6 +15,9 @@ class LightningUnet(pl.LightningModule):
         - optimizer_class (torch.optim.Optimizer):
         - unet (nn.Module): model to use.
         - learning rate (float): learning rate. Defaults to 0.1
+        - gradients_histograms: whether to log all parameters
+            gradients as histograms and the mean of their absolute value as series. 
+            Defaults to False.
     """
     def __init__(
             self,
@@ -22,7 +25,8 @@ class LightningUnet(pl.LightningModule):
             criterion: nn.Module,
             optimizer_class: Optimizer,
             unet: nn.Module,
-            learning_rate: float = 0.1):
+            learning_rate: float = 0.001,
+            gradients_histograms: bool = False):
         super(LightningUnet, self).__init__()
 
         self.help_logger = logging.getLogger(__name__)
@@ -31,6 +35,7 @@ class LightningUnet(pl.LightningModule):
         self.optimizer_class = optimizer_class
         self.unet = unet
         self.is_group = self.unet.group
+        self.gradients_histograms = gradients_histograms
 
         self.save_hyperparameters()
 
@@ -70,11 +75,11 @@ class LightningUnet(pl.LightningModule):
         return loss
 
     def training_epoch_end(self, outputs):
-        for name, params in self.named_parameters():
-            if params.grad is not None:
-                self.logger.experiment.add_histogram(f"Grad of {name}",
-                                                     params.grad,
-                                                     self.current_epoch)
-                self.logger.experiment.add_scalar(
-                    f"Mean of abs of grad of {name}",
-                    torch.mean(torch.abs(params.grad)), self.current_epoch)
+        if self.gradients_histograms:
+            for name, params in self.named_parameters():
+                if params.grad is not None:
+                    self.logger.experiment.add_histogram(
+                        f"Grad of {name}", params.grad, self.current_epoch)
+                    self.logger.experiment.add_scalar(
+                        f"Mean of abs of grad of {name}",
+                        torch.mean(torch.abs(params.grad)), self.current_epoch)
