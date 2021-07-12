@@ -69,4 +69,4 @@ class GDiceLossV2(nn.Module):
 
         denominator = ((input + target).sum(-1) * class_weights).sum()
 
-        return -2. * intersect / denominator.clamp(min=self.smooth)
+        return 1 - 2. * intersect / denominator.clamp(min=self.smooth)
