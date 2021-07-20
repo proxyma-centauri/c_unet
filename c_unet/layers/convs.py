@@ -1,10 +1,11 @@
-import logging 
+import logging
 
 from torch import nn
 from typing import List, Optional, Union
 
 from c_unet.utils.helpers.helpers import conv3d
 from c_unet.utils.normalization.SwitchNorm3d import SwitchNorm3d
+
 
 class ConvBlock(nn.Module):
     """Applies a 3D convolution with optional normalization and nonlinearity steps block
@@ -24,7 +25,6 @@ class ConvBlock(nn.Module):
         ValueError: Invalid normalization value
         ValueError: Invalid nonlinearity value
     """
-
     def __init__(self,
                  in_channels: int,
                  out_channels: int,
@@ -40,13 +40,15 @@ class ConvBlock(nn.Module):
         modules = [
             conv3d(in_channels, out_channels, kernel_size, stride, padding,
                    bias, dilation)
-        ] 
+        ]
 
         if nonlinearity:
             if nonlinearity == "relu":
                 modules.append(nn.ReLU(inplace=True))
             elif nonlinearity == "leaky-relu":
                 modules.append(nn.LeakyReLU(inplace=True))
+            elif nonlinearity == "elu":
+                modules.append(nn.ELU(inplace=True))
             elif nonlinearity == "sigmoid":
                 modules.append(nn.Sigmoid())
             elif nonlinearity == "softmax":
@@ -100,57 +102,54 @@ class ConvResBlock(nn.Module):
 
     """
     def __init__(self,
-                in_channels: int,
-                inter_channels: int,
-                out_channels: int,
-                kernel_size: int = 3,
-                stride: Union[int, List[int]] = 1,
-                padding: Union[str, int] = 1,
-                first_kernel_size: Optional[int] = None,
-                first_padding: Optional[int] = None,
-                bias: Optional[bool] = True,
-                dilation: int = 1,
-                nonlinearity: Optional[str] = "relu",
-                normalization: Optional[str] = "bn"):
+                 in_channels: int,
+                 inter_channels: int,
+                 out_channels: int,
+                 kernel_size: int = 3,
+                 stride: Union[int, List[int]] = 1,
+                 padding: Union[str, int] = 1,
+                 first_kernel_size: Optional[int] = None,
+                 first_padding: Optional[int] = None,
+                 bias: Optional[bool] = True,
+                 dilation: int = 1,
+                 nonlinearity: Optional[str] = "relu",
+                 normalization: Optional[str] = "bn"):
         super(ConvResBlock, self).__init__()
         self.logger = logging.getLogger(__name__)
 
         other_kernel_size = first_kernel_size if first_kernel_size is not None else kernel_size
         other_padding = first_padding if first_padding is not None else padding
-        
+
         self.match_channels = ConvBlock(in_channels,
-                            out_channels,
-                            kernel_size=1,
-                            stride=1,
-                            padding=0,
-                            dilation=1,
-                            bias=bias,
-                            nonlinearity=nonlinearity,
-                            normalization=""
-        )
+                                        out_channels,
+                                        kernel_size=1,
+                                        stride=1,
+                                        padding=0,
+                                        dilation=1,
+                                        bias=bias,
+                                        nonlinearity=nonlinearity,
+                                        normalization="")
 
         self.block_1 = ConvBlock(in_channels,
-                            inter_channels,
-                            other_kernel_size,
-                            stride,
-                            other_padding,
-                            bias,
-                            dilation,
-                            nonlinearity=nonlinearity,
-                            normalization=normalization
-        )
-        self.block_2 = ConvBlock(inter_channels,
-                            out_channels,
-                            kernel_size,
-                            stride,
-                            padding,
-                            bias,
-                            dilation,
-                            nonlinearity="", # No nonlinearity
-                            normalization=normalization
-        )
+                                 inter_channels,
+                                 other_kernel_size,
+                                 stride,
+                                 other_padding,
+                                 bias,
+                                 dilation,
+                                 nonlinearity=nonlinearity,
+                                 normalization=normalization)
+        self.block_2 = ConvBlock(
+            inter_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            bias,
+            dilation,
+            nonlinearity="",  # No nonlinearity
+            normalization=normalization)
         self.relu = nn.ReLU()
-        
 
     def forward(self, x):
         z = self.match_channels(x)
@@ -169,10 +168,8 @@ class FinalConvolution(nn.Module):
         - out_channels (int) Number of output channels
         - final_activation (str) : Final activation layer
     """
-    def __init__(self,
-                conv: nn.Module,
-                out_channels: int,
-                final_activation: str):
+    def __init__(self, conv: nn.Module, out_channels: int,
+                 final_activation: str):
         super(FinalConvolution, self).__init__()
 
         self.conv = conv
