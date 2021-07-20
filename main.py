@@ -1,9 +1,5 @@
-import numpy as np
 from datetime import datetime
-import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torchio as tio
 import pytorch_lightning as pl
 

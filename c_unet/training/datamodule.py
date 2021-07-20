@@ -17,13 +17,15 @@ class DataModule(pl.LightningDataModule):
         - batch_size (int): size of the batch. Defaults to 16
         - num_workers (int): number of workers for the dataloaders. Defaults to 0
         - train_val_ratio (float): ratio of the data to use in validation. Defaults to 0.7
+        - test_has_labels (bool); indicates whether or not to look for and download labels for test dataset
     """
     def __init__(self,
                  task: str,
                  subset_name: str = "",
                  batch_size: int = 16,
                  num_workers: int = 0,
-                 train_val_ratio: float = 0.7):
+                 train_val_ratio: float = 0.7,
+                 test_has_labels: bool = True):
         super().__init__()
         self.task = task
         self.subset_name = subset_name
@@ -31,6 +33,7 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.dataset_dir = Path(task)
         self.train_val_ratio = train_val_ratio
+        self.test_has_labels = test_has_labels
         self.subjects = None
         self.test_subjects = None
         self.preprocess = None
@@ -52,11 +55,15 @@ class DataModule(pl.LightningDataModule):
         image_training_paths = get_niis(self.dataset_dir / 'imagesTr')
         label_training_paths = get_niis(self.dataset_dir / 'labelsTr')
         image_test_paths = get_niis(self.dataset_dir / 'imagesTs')
+        label_test_paths = []
 
-        return image_training_paths, label_training_paths, image_test_paths
+        if self.test_has_labels:
+            label_test_paths = get_niis(self.dataset_dir / 'labelsTs')
+
+        return image_training_paths, label_training_paths, image_test_paths, label_test_paths
 
     def prepare_data(self):
-        image_training_paths, label_training_paths, image_test_paths = self.download_data(
+        image_training_paths, label_training_paths, image_test_paths, label_test_paths = self.download_data(
         )
         self.subjects = []
         self.test_subjects = []
@@ -68,10 +75,17 @@ class DataModule(pl.LightningDataModule):
 
             self.subjects.append(subject)
 
-        for image_path in image_test_paths:
-            subject = tio.Subject(image=tio.ScalarImage(image_path), )
+        if self.test_has_labels:
+            for image_path in zip(image_test_paths, label_test_paths):
+                subject = tio.Subject(image=tio.ScalarImage(image_path),
+                                      label=tio.LabelMap(label_path))
 
-            self.test_subjects.append(subject)
+                self.test_subjects.append(subject)
+        else:
+            for image_path in image_test_paths:
+                subject = tio.Subject(image=tio.ScalarImage(image_path))
+
+                self.test_subjects.append(subject)
 
     def get_preprocessing_transform(self):
         preprocess = tio.Compose([
