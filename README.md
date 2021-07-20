@@ -56,7 +56,7 @@ mkdir logs
 ├── README.md
 ├── logs # logging directory created during install
 └── c_unet
-    ├── architectures # Models
+    ├── architectures # Models
     │   ├── __init__.py
     │   ├── decoder.py
     │   ├── dilated_dense.py
@@ -71,25 +71,26 @@ mkdir logs
     ├── layers # (Group) Convolution layers definition
     │   ├── __init__.py
     │   ├── convs.py
-    │   └── gconvs.py
-    ├── training # Pytorch lightning models and structures definition
-    │   ├── datamodule.py
-    │   ├── __init__.py
-    │   ├── lightningUnet.py
-    │   └── losses.py
-    └── utils
+    │   └── gconvs.py
+    ├── training # Pytorch lightning models and structures definition
+    │   ├── datamodule.py
+    │   ├── __init__.py
+    │   ├── lightningUnet.py
+    │   ├── GDiceLossV2.py
+    │   └── tverskyLosses.py
+    └── utils
         ├── dropout # Custom dropout layers
         │   ├── GaussianDropout.py
         │   └── __init__.py
         ├── helpers # Helper functions
         │   ├── helpers.py
         │   └── __init__.py
-        ├── interpolation # Interpolation (upsampling) layers
+        ├── interpolation # Interpolation (upsampling) layers
         │   ├── Interpolate.py
         │   ├── ReshapedInterpolate.py
         │   └── __init__.py
         ├── __init__.py
-        ├── logging # Logging definition module
+        ├── logging # Logging definition module
         │   ├── logging.py
         │   ├── loggingConfig.yml # Logging configuration
         │   └── __init__.py
