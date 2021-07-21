@@ -114,7 +114,7 @@ def main(args):
                                              dataloader_type="train")
             for subject in batch:
                 plot_middle_slice(subject, args.get("CMAP"),
-                                  f"train-{subject.name}")
+                                  f"train-{subject.get('name')}")
 
         for batch in data.val_dataloader():
             make_predictions_over_dataloader(batch,
@@ -123,7 +123,7 @@ def main(args):
 
             for subject in batch:
                 plot_middle_slice(subject, args.get("CMAP"),
-                                  f"val-{subject.name}")
+                                  f"val-{subject.get('name')}")
 
         for batch in data.test_dataloader():
             make_predictions_over_dataloader(batch,
@@ -132,7 +132,7 @@ def main(args):
 
             for subject in batch:
                 plot_middle_slice(subject, args.get("CMAP"),
-                                  f"test-{subject.name}")
+                                  f"test-{subject.get('name')}")
 
 
 if __name__ == "__main__":
