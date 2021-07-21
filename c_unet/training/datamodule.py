@@ -25,7 +25,7 @@ class DataModule(pl.LightningDataModule):
                  batch_size: int = 16,
                  num_workers: int = 0,
                  train_val_ratio: float = 0.7,
-                 test_has_labels: bool = True):
+                 test_has_labels: bool = False):
         super().__init__()
         self.task = task
         self.subset_name = subset_name
@@ -70,20 +70,23 @@ class DataModule(pl.LightningDataModule):
 
         for image_path, label_path in zip(image_training_paths,
                                           label_training_paths):
-            subject = tio.Subject(image=tio.ScalarImage(image_path),
+            subject = tio.Subject(name=image_path,
+                                  image=tio.ScalarImage(image_path),
                                   label=tio.LabelMap(label_path))
 
             self.subjects.append(subject)
 
         if self.test_has_labels:
             for image_path in zip(image_test_paths, label_test_paths):
-                subject = tio.Subject(image=tio.ScalarImage(image_path),
+                subject = tio.Subject(name=image_path,
+                                      image=tio.ScalarImage(image_path),
                                       label=tio.LabelMap(label_path))
 
                 self.test_subjects.append(subject)
         else:
             for image_path in image_test_paths:
-                subject = tio.Subject(image=tio.ScalarImage(image_path))
+                subject = tio.Subject(name=image_path,
+                                      image=tio.ScalarImage(image_path))
 
                 self.test_subjects.append(subject)
 

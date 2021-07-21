@@ -13,16 +13,15 @@ from c_unet.training.lightningUnet import LightningUnet
 from c_unet.utils.plots.plot import plot_middle_slice
 
 # TODO : subject name for figs
-# TODO : add default values for config
-# TODO : save weights
 
 
 def main(args):
     # DATA
-    data = DataModule("PATH_TO_DATA",
-                      subset_name="SUBSET_NAME",
-                      batch_size="BATCH_SIZE",
-                      num_workers="NUM_WORKERS")
+    data = DataModule(args.get("PATH_TO_DATA"),
+                      subset_name=args.get("SUBSET_NAME"),
+                      batch_size=args.get("BATCH_SIZE"),
+                      num_workers=args.get("NUM_WORKERS"),
+                      test_has_labels=args.get("TEST_HAS_LABELS"))
 
     data.prepare_data()
     data.setup()
@@ -58,7 +57,9 @@ def main(args):
     tb_logger = pl_loggers.TensorBoardLogger(args.get("LOGS_DIR"),
                                              name=args.get("LOG_NAME"),
                                              default_hp_metric=False)
-    callbacks = []
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor='val_loss')
+    callbacks = [checkpoint_callback]
 
     if args.get("EARLY_STOPPING") is not None:
         early_stopping = pl.callbacks.early_stopping.EarlyStopping(
@@ -139,34 +140,37 @@ if __name__ == "__main__":
 
     args["PATH_TO_DATA"] = config("PATH_TO_DATA")
     args["SUBSET_NAME"] = config("SUBSET_NAME")
-    args["BATCH_SIZE"] = config("BATCH_SIZE")
-    args["NUM_WORKERS"] = config("NUM_WORKERS")
+    args["BATCH_SIZE"] = config("BATCH_SIZE", cast=int)
+    args["NUM_WORKERS"] = config("NUM_WORKERS", cast=int)
+    args["TEST_HAS_LABELS"] = config("TEST_HAS_LABELS",
+                                     default=False,
+                                     cast=bool)
 
     args["GROUP"] = config("GROUP")
-    args["GROUP_DIM"] = config("GROUP_DIM")
+    args["GROUP_DIM"] = config("GROUP_DIM", cast=int)
     args["IN_CHANNELS"] = 1
-    args["OUT_CHANNELS"] = config("OUT_CHANNELS")
-    args["FINAL_ACTIVATION"] = config("FINAL_ACTIVATION")
-    args["NONLIN"] = config("NONLIN")
-    args["DIVIDER"] = config("DIVIDER")
-    args["MODEL_DEPTH"] = config("MODEL_DEPTH")
-    args["DROPOUT"] = config("DROPOUT")
+    args["OUT_CHANNELS"] = config("OUT_CHANNELS", cast=int)
+    args["FINAL_ACTIVATION"] = config("FINAL_ACTIVATION", default="softmax")
+    args["NONLIN"] = config("NONLIN", default="elu")
+    args["DIVIDER"] = config("DIVIDER", cast=int)
+    args["MODEL_DEPTH"] = config("MODEL_DEPTH", cast=int)
+    args["DROPOUT"] = config("DROPOUT", cast=float)
 
     args["LOGS_DIR"] = config("LOGS_DIR")
     args["LOG_NAME"] = config("LOG_NAME")
 
-    args["EARLY_STOPPING"] = config("EARLY_STOPPING")
+    args["EARLY_STOPPING"] = config("EARLY_STOPPING", default=False, cast=bool)
 
-    args["LEARNING_RATE"] = config("LEARNING_RATE")
-    args["HISTOGRAMS"] = config("HISTOGRAMS")
+    args["LEARNING_RATE"] = config("LEARNING_RATE", default=1e-3, cast=float)
+    args["HISTOGRAMS"] = config("HISTOGRAMS", default=False, cast=bool)
 
-    args["GPUS"] = config("GPUS")
-    args["PRECISION"] = config("PRECISION")
+    args["GPUS"] = config("GPUS", default=1)
+    args["PRECISION"] = config("PRECISION", default=16, cast=int)
 
-    args["MAX_EPOCHS"] = config("MAX_EPOCHS")
-    args["LOG_STEPS"] = config("LOG_STEPS")
+    args["MAX_EPOCHS"] = config("MAX_EPOCHS", default=30, cast=int)
+    args["LOG_STEPS"] = config("LOG_STEPS", default=5, cast=int)
 
-    args["GRADIENT_CLIP"] = config("GRADIENT_CLIP")
-    args["CMAP"] = config("CMAP")
+    args["GRADIENT_CLIP"] = config("GRADIENT_CLIP", cast=float)
+    args["CMAP"] = config("CMAP", default="Oranges")
 
     main(args)
