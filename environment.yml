@@ -11,7 +11,8 @@ dependencies:
   - cudatoolkit=11.1.*
   - pip=20.2.*
   - pip:
-    - pytorch-lightning
-    - pytorch-lightning-bolts
-    - torchio
-    - einops
+    - pytorch-lightning=1.3.*
+    - pytorch-lightning-bolts=0.3.*
+    - torchio=0.18.*
+    - einops=0.3.*
+    - pymia=0.3.*

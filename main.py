@@ -2,8 +2,12 @@ from datetime import datetime
 import torch
 import torchio as tio
 import pytorch_lightning as pl
+import numpy as np
 
 from pytorch_lightning import loggers as pl_loggers
+import pymia.evaluation.evaluator as eval_
+import pymia.evaluation.metric as metric
+import pymia.evaluation.writer as writer
 from decouple import config
 
 from c_unet.training.datamodule import DataModule
@@ -81,7 +85,9 @@ def main(args):
                          logger=tb_logger,
                          callbacks=callbacks,
                          benchmark=True,
-                         gradient_clip_val=0.5)
+                         gradient_clip_val=args.get("GRADIENT_CLIP"),
+                         gradient_clip_algorithm='value',
+                         stochastic_weight_avg=True)
 
     # Training
     start = datetime.now()
@@ -89,6 +95,17 @@ def main(args):
     # torch.autograd.set_detect_anomaly(True)
     trainer.fit(model=lightning_model.cuda(), datamodule=data)
     print('Training duration:', datetime.now() - start)
+
+    # MEASURES
+    metrics = [
+        metric.DiceCoefficient(),
+        metric.HausdorffDistance(percentile=100),
+        metric.VolumeSimilarity(),
+        # metric.MahalanobisDistance()
+    ]
+    labels = {i: name for i, name in enumerate(args.get("CLASSES_NAME"))}
+
+    evaluator = eval_.SegmentationEvaluator(metrics, labels)
 
     # PREDICTIONS
     def make_predictions_over_dataloader(batch,
@@ -106,37 +123,42 @@ def main(args):
         list_of_predictions[dataloader_type].append(batch_subjects)
 
     list_of_predictions = {"train": [], "val": [], "test": []}
+    dataloaders = {
+        "train": data.train_dataloader(),
+        "test": data.test_dataloader(),
+        "val": data.val_dataloader()
+    }
 
     with torch.no_grad():
-        for batch in data.train_dataloader():
-            make_predictions_over_dataloader(batch,
-                                             list_of_predictions,
-                                             dataloader_type="train")
-            for subject in batch:
-                plot_middle_slice(subject, args.get("CMAP"),
-                                  f"train-{subject.get('name')}")
+        for type, dataloader in dataloaders.items():
+            for batch in dataloader:
+                make_predictions_over_dataloader(batch,
+                                                 list_of_predictions,
+                                                 dataloader_type=type)
+                for subject in batch:
+                    subject_id = f"{type}-{subject.get('name')}"
 
-        for batch in data.val_dataloader():
-            make_predictions_over_dataloader(batch,
-                                             list_of_predictions,
-                                             dataloader_type="val")
+                    sub_label = subject['label'][tio.DATA].argmax(
+                        dim=0).numpy()
+                    sub_prediction = subject['prediction'][tio.DATA].argmax(
+                        dim=0).numpy()
 
-            for subject in batch:
-                plot_middle_slice(subject, args.get("CMAP"),
-                                  f"val-{subject.get('name')}")
+                    evaluator.evaluate(sub_prediction, sub_label, subject_id)
+                    plot_middle_slice(subject, args.get("CMAP"), subject_id)
 
-        for batch in data.test_dataloader():
-            make_predictions_over_dataloader(batch,
-                                             list_of_predictions,
-                                             dataloader_type="test")
+    # SAVING METRICS
+    functions = {'MEAN': np.mean, 'STD': np.std}
+    writer.ConsoleStatisticsWriter(functions=functions).write(
+        evaluator.results)
 
-            for subject in batch:
-                plot_middle_slice(subject, args.get("CMAP"),
-                                  f"test-{subject.get('name')}")
+    writer.CSVWriter(f"results/{args.get('LOG_NAME')}.csv").write(
+        evaluator.results)
 
 
 if __name__ == "__main__":
     args = {}
+
+    args["CLASSES_NAME"] = config("CLASSES_NAME").split(", ")
 
     args["PATH_TO_DATA"] = config("PATH_TO_DATA")
     args["SUBSET_NAME"] = config("SUBSET_NAME")
@@ -170,7 +192,7 @@ if __name__ == "__main__":
     args["MAX_EPOCHS"] = config("MAX_EPOCHS", default=30, cast=int)
     args["LOG_STEPS"] = config("LOG_STEPS", default=5, cast=int)
 
-    args["GRADIENT_CLIP"] = config("GRADIENT_CLIP", cast=float)
+    args["GRADIENT_CLIP"] = config("GRADIENT_CLIP", default=0.5, cast=float)
     args["CMAP"] = config("CMAP", default="Oranges")
 
-    main(args)
+    # main(args)
