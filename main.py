@@ -30,9 +30,6 @@ def main(args):
     data.prepare_data()
     data.setup()
 
-    print(data.test_subjects[0])
-    print(data.test_subjects[0]["image"].shape)
-
     print('Training:  ', len(data.train_set))
     print('Validation: ', len(data.val_set))
     print('Test:      ', len(data.test_set))
@@ -115,7 +112,6 @@ def main(args):
                                          list_of_predictions,
                                          dataloader_type="train"):
         inputs = batch['image'][tio.DATA].to(lightning_model.device)
-        print(inputs.shape)
 
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
@@ -144,7 +140,7 @@ def main(args):
                                                  dataloader_type=type_loader)
 
     # EVALUATING
-    for type_predictions, batch in list_of_predictions:
+    for type_predictions, batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
 
         for subject in batch:
