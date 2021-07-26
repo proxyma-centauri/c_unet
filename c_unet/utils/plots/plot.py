@@ -75,7 +75,7 @@ def plot_middle_slice(subject,
     all_cols = list(zip(pred_cols, label_cols))
 
     if with_labels:
-        cols = ['Image', 'Label', 'Pred'
+        cols = ['Image', 'Pred', 'Label'
                 ] + [elt for sublist in all_cols for elt in sublist]
 
     else:
