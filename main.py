@@ -140,6 +140,8 @@ def main(args):
                                                  dataloader_type=type_loader)
 
     # EVALUATING
+    Path(f"results/{args.get('LOG_NAME')}").mkdir(parents=True, exist_ok=True)
+
     for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
 
@@ -149,6 +151,7 @@ def main(args):
 
         for batch in list_of_batch:
             for subject in batch:
+                print(subject)
                 subject_id = f"{type_predictions}-{subject.get('name')}"
 
                 if should_evaluate_and_plot_normaly:
@@ -159,20 +162,21 @@ def main(args):
 
                     evaluator.evaluate(sub_prediction, sub_label, subject_id)
 
-                plot_middle_slice(subject,
-                                  len(args.get("CLASSES_NAME")),
-                                  args.get("CMAP"),
-                                  subject_id,
-                                  with_labels=should_evaluate_and_plot_normaly)
+                plot_middle_slice(
+                    subject,
+                    nb_of_classes=len(args.get("CLASSES_NAME")),
+                    cmap=args.get("CMAP"),
+                    save_name=f"results/{args.get('LOG_NAME')}/{subject_id}",
+                    with_labels=should_evaluate_and_plot_normaly)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
     writer.ConsoleStatisticsWriter(functions=functions).write(
         evaluator.results)
 
-    Path("results/").mkdir(parents=True, exist_ok=True)
-    writer.CSVWriter(f"results/{args.get('LOG_NAME')}.csv").write(
-        evaluator.results)
+    writer.CSVWriter(
+        f"results/{args.get('LOG_NAME')}/metrics_report.csv").write(
+            evaluator.results)
 
 
 if __name__ == "__main__":
