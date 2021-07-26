@@ -114,6 +114,7 @@ def main(args):
                                          list_of_predictions,
                                          dataloader_type="train"):
         inputs = batch['image'][tio.DATA].to(lightning_model.device)
+        filenames = batch['image']['filename']
 
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
@@ -123,7 +124,8 @@ def main(args):
         batch_subjects = tio.utils.get_subjects_from_batch(batch)
         tio.utils.add_images_from_batch(batch_subjects, predictions,
                                         tio.LabelMap)
-        list_of_predictions[dataloader_type].append(batch_subjects)
+        list_of_predictions[dataloader_type].append(
+            (batch_subjects, filenames))
 
     list_of_predictions = {"train": [], "val": [], "test": []}
     dataloaders = {
@@ -150,10 +152,9 @@ def main(args):
         should_evaluate_and_plot_normaly = (type_predictions != "test") or (
             args.get("TEST_HAS_LABELS"))
 
-        for batch in list_of_batch:
-            for subject in batch:
-                print(subject['image'])
-                subject_id = f"{type_predictions}-{subject.get('filename')}"
+        for (batch, filenames) in list_of_batch:
+            for subject, filename in zip(batch, filenames):
+                subject_id = f"{type_predictions}-{filename}"
 
                 if should_evaluate_and_plot_normaly:
                     sub_label = subject['label'][tio.DATA].argmax(
