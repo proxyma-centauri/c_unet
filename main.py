@@ -143,16 +143,27 @@ def main(args):
     for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
 
+        # Making sure that we only try to evaluate on test when there are test labels
+        should_evaluate_and_plot_normaly = (type_predictions != "test") or (
+            args.get("TEST_HAS_LABELS"))
+
         for batch in list_of_batch:
             for subject in batch:
                 subject_id = f"{type_predictions}-{subject.get('name')}"
 
-                sub_label = subject['label'][tio.DATA].argmax(dim=0).numpy()
-                sub_prediction = subject['prediction'][tio.DATA].argmax(
-                    dim=0).numpy()
+                if should_evaluate_and_plot_normaly:
+                    sub_label = subject['label'][tio.DATA].argmax(
+                        dim=0).numpy()
+                    sub_prediction = subject['prediction'][tio.DATA].argmax(
+                        dim=0).numpy()
 
-                evaluator.evaluate(sub_prediction, sub_label, subject_id)
-                plot_middle_slice(subject, args.get("CMAP"), subject_id)
+                    evaluator.evaluate(sub_prediction, sub_label, subject_id)
+
+                plot_middle_slice(subject,
+                                  len(args.get("CLASSES_NAME")),
+                                  args.get("CMAP"),
+                                  subject_id,
+                                  with_labels=should_evaluate_and_plot_normaly)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
