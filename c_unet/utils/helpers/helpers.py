@@ -2,26 +2,25 @@ from torch import nn
 from typing import List, Union
 
 
-def calc_same_padding(
-    input_,
-    kernel=1,
-    stride=1,
-    dilation=1,
-    transposed=False) -> int:
+def calc_same_padding(input_,
+                      kernel=1,
+                      stride=1,
+                      dilation=1,
+                      transposed=False) -> int:
     if transposed:
         return (dilation * (kernel - 1) + 1) // 2 - 1, input_ // (1. / stride)
     else:
         return (dilation * (kernel - 1) + 1) // 2, input_ // stride
 
 
-def calc_upsampling_size(
-    input_size: int,
-    dilation: int = 1,
-    tconv_kernel_size: int=3,
-    tconv_stride: int = 2,
-    tconv_padding: int = 1,
-    output_padding: int = 1) -> int:
-    return (input_size - 1)*tconv_stride - 2*tconv_padding + dilation*(tconv_kernel_size - 1) + output_padding + 1
+def calc_upsampling_size(input_size: int,
+                         dilation: int = 1,
+                         tconv_kernel_size: int = 3,
+                         tconv_stride: int = 2,
+                         tconv_padding: int = 1,
+                         output_padding: int = 1) -> int:
+    return (input_size - 1) * tconv_stride - 2 * tconv_padding + dilation * (
+        tconv_kernel_size - 1) + output_padding + 1
 
 
 def conv3d(in_channels: int,
@@ -48,17 +47,11 @@ def conv3d(in_channels: int,
     Returns:
         nn.Module: Conv3d
     """
-    if padding == "same":
-        p = (dilation * (kernel_size - 1) + 1) // 2
-    elif isinstance(padding, int):
-        p = padding
-    else:
-        raise ValueError(f"Invalid padding value: {padding}")
 
     return nn.Conv3d(in_channels,
                      out_channels,
                      kernel_size,
                      stride=stride,
-                     padding=p,
+                     padding=padding,
                      bias=bias,
                      dilation=dilation)

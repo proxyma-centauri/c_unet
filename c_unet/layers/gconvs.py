@@ -46,13 +46,7 @@ class Gconv3d(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.dilation = dilation
-
-        if padding == "same":
-            self.p = (dilation * (kernel_size - 1) + 1) // 2
-        elif isinstance(padding, int):
-            self.p = padding
-        else:
-            raise ValueError(f"Invalid padding value: {padding}")
+        self.p = padding
 
         if group == "V":
             from c_unet.groups.V_group import V_group

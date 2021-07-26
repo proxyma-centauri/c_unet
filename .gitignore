@@ -7,8 +7,9 @@ ISBI2012
 everything
 npys
 test_scripts
-logs/
+logs*/
 lightning_logs/
+results/
 .vscode
 *.tar
 *.png
@@ -20,3 +21,4 @@ lightning_logs/
 *.txt
 *.swp
 tb_logs/
+.env

@@ -34,8 +34,8 @@ class V_group(object):
         rot_mat = self.get_rot_mat(theta,
                                    x.device)[None,
                                              ...].repeat(x.shape[0], 1, 1)
-        grid = F.affine_grid(rot_mat, x.size())
-        x_rot = F.grid_sample(x, grid)
+        grid = F.affine_grid(rot_mat, x.size(), align_corners=False)
+        x_rot = F.grid_sample(x, grid, align_corners=False)
         return x_rot
 
     def get_Grotations(self, W):
