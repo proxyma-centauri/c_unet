@@ -3,11 +3,12 @@ import torch
 import torchio as tio
 import pytorch_lightning as pl
 import numpy as np
-
-from pytorch_lightning import loggers as pl_loggers
 import pymia.evaluation.evaluator as eval_
 import pymia.evaluation.metric as metric
 import pymia.evaluation.writer as writer
+
+from pytorch_lightning import loggers as pl_loggers
+from pathlib import Path
 from decouple import config
 
 from c_unet.training.datamodule import DataModule
@@ -158,6 +159,7 @@ def main(args):
     writer.ConsoleStatisticsWriter(functions=functions).write(
         evaluator.results)
 
+    Path("results/").mkdir(parents=True, exist_ok=True)
     writer.CSVWriter(f"results/{args.get('LOG_NAME')}.csv").write(
         evaluator.results)
 
@@ -193,7 +195,7 @@ if __name__ == "__main__":
     args["LEARNING_RATE"] = config("LEARNING_RATE", default=1e-3, cast=float)
     args["HISTOGRAMS"] = config("HISTOGRAMS", default=False, cast=bool)
 
-    args["GPUS"] = config("GPUS", default=1)
+    args["GPUS"] = [config("GPUS", default=1, cast=int)]
     args["PRECISION"] = config("PRECISION", default=16, cast=int)
 
     args["MAX_EPOCHS"] = config("MAX_EPOCHS", default=30, cast=int)
