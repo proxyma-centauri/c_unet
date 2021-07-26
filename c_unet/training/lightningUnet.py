@@ -74,7 +74,7 @@ class LightningUnet(pl.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         return loss
 
-    def training_epoch_end(self, outputs):
+    def training_epoch_end(self):
         if self.gradients_histograms:
             for name, params in self.named_parameters():
                 if params.grad is not None:
