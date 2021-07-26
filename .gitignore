@@ -7,7 +7,7 @@ ISBI2012
 everything
 npys
 test_scripts
-logs/
+logs*/
 lightning_logs/
 .vscode
 *.tar

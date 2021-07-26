@@ -6,7 +6,7 @@ def plot_middle_slice(subject, cmap, save_name):
     fig, axarr = plt.subplots(2, 11, figsize=(15, 8))
 
     # Taking the middle slice
-    slice_nb = subject['image'][tio.DATA].shape()[1]
+    slice_nb = subject['image'][tio.DATA].shape[1]
 
     # Sagital
     image_sag = subject['image'][tio.DATA][:, slice_nb, :, :].squeeze()
