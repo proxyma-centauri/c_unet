@@ -112,9 +112,12 @@ def main(args):
                                          list_of_predictions,
                                          dataloader_type="train"):
         inputs = batch['image'][tio.DATA].to(lightning_model.device)
+        print(inputs.shape)
 
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
+        print(inputs.shape)
+
         predictions = lightning_model.unet(inputs).cpu()
 
         batch_subjects = tio.utils.get_subjects_from_batch(batch)
@@ -131,14 +134,16 @@ def main(args):
 
     with torch.no_grad():
         for type_loader, dataloader in dataloaders.items():
-            print(f" --- Processing {type_loader} --- ")
+            print(f" --- PREDICTING {type_loader} --- ")
             for batch in dataloader:
                 make_predictions_over_dataloader(batch,
                                                  list_of_predictions,
                                                  dataloader_type=type_loader)
 
-    # Evaluating
+    # EVALUATING
     for type_predictions, batch in list_of_predictions:
+        print(f" --- EVALUATING {type_predictions} --- ")
+
         for subject in batch:
             subject_id = f"{type_predictions}-{subject.get('name')}"
 
@@ -198,4 +203,4 @@ if __name__ == "__main__":
     args["GRADIENT_CLIP"] = config("GRADIENT_CLIP", default=0.5, cast=float)
     args["CMAP"] = config("CMAP", default="Oranges")
 
-    # main(args)
+    main(args)
