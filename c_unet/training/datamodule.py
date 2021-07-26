@@ -71,7 +71,7 @@ class DataModule(pl.LightningDataModule):
         for image_path, label_path in zip(image_training_paths,
                                           label_training_paths):
             subject = tio.Subject(image=tio.ScalarImage(
-                image_path, filename=f"{image_path}"),
+                image_path, filename=f"{image_path.split('/')[-1]}"),
                                   label=tio.LabelMap(label_path))
 
             self.subjects.append(subject)
@@ -80,14 +80,14 @@ class DataModule(pl.LightningDataModule):
             for image_path, label_path in zip(image_test_paths,
                                               label_test_paths):
                 subject = tio.Subject(image=tio.ScalarImage(
-                    image_path, filename=f"{image_path}"),
+                    image_path, filename=f"{image_path.split('/')[-1]}"),
                                       label=tio.LabelMap(label_path))
 
                 self.test_subjects.append(subject)
         else:
             for image_path in image_test_paths:
                 subject = tio.Subject(image=tio.ScalarImage(
-                    image_path, filename=f"{image_path}"))
+                    image_path, filename=f"{image_path.split('/')[-1]}"))
 
                 self.test_subjects.append(subject)
 
