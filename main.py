@@ -63,9 +63,7 @@ def main(args):
                                              name=args.get("LOG_NAME"),
                                              default_hp_metric=False)
 
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(monitor='val_loss')
-    callbacks = [checkpoint_callback]
-
+    callbacks = []
     if args.get("EARLY_STOPPING") is not None:
         early_stopping = pl.callbacks.early_stopping.EarlyStopping(
             monitor='val_loss')
@@ -78,17 +76,20 @@ def main(args):
         learning_rate=args.get("LEARNING_RATE"),
         gradients_histograms=args.get("HISTOGRAMS"))
 
-    trainer = pl.Trainer(gpus=args.get("GPUS"),
-                         precision=args.get("PRECISION"),
-                         log_gpu_memory=True,
-                         max_epochs=args.get("MAX_EPOCHS"),
-                         log_every_n_steps=args.get("LOG_STEPS"),
-                         logger=tb_logger,
-                         callbacks=callbacks,
-                         benchmark=True,
-                         gradient_clip_val=args.get("GRADIENT_CLIP"),
-                         gradient_clip_algorithm='value',
-                         stochastic_weight_avg=True)
+    trainer = pl.Trainer(
+        gpus=args.get("GPUS"),
+        precision=args.get("PRECISION"),
+        log_gpu_memory=True,
+        max_epochs=args.get("MAX_EPOCHS"),
+        log_every_n_steps=args.get("LOG_STEPS"),
+        logger=tb_logger,
+        callbacks=callbacks,
+        benchmark=True,
+        gradient_clip_val=args.get("GRADIENT_CLIP"),
+        gradient_clip_algorithm='value',
+        stochastic_weight_avg=True,
+        checkpoint_callback=True,
+    )
 
     # Training
     start = datetime.now()
