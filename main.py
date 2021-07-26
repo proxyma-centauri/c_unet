@@ -152,7 +152,7 @@ def main(args):
         for batch in list_of_batch:
             for subject in batch:
                 print(subject['image'])
-                subject_id = f"{type_predictions}-{subject.get('name')}"
+                subject_id = f"{type_predictions}-{subject.get('filename')}"
 
                 if should_evaluate_and_plot_normaly:
                     sub_label = subject['label'][tio.DATA].argmax(
