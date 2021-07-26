@@ -130,21 +130,24 @@ def main(args):
     }
 
     with torch.no_grad():
-        for type, dataloader in dataloaders.items():
+        for type_loader, dataloader in dataloaders.items():
+            print(f" --- Processing {type_loader} --- ")
             for batch in dataloader:
                 make_predictions_over_dataloader(batch,
                                                  list_of_predictions,
-                                                 dataloader_type=type)
-                for subject in batch:
-                    subject_id = f"{type}-{subject.get('name')}"
+                                                 dataloader_type=type_loader)
 
-                    sub_label = subject['label'][tio.DATA].argmax(
-                        dim=0).numpy()
-                    sub_prediction = subject['prediction'][tio.DATA].argmax(
-                        dim=0).numpy()
+    # Evaluating
+    for type_predictions, batch in list_of_predictions:
+        for subject in batch:
+            subject_id = f"{type_predictions}-{subject.get('name')}"
 
-                    evaluator.evaluate(sub_prediction, sub_label, subject_id)
-                    plot_middle_slice(subject, args.get("CMAP"), subject_id)
+            sub_label = subject['label'][tio.DATA].argmax(dim=0).numpy()
+            sub_prediction = subject['prediction'][tio.DATA].argmax(
+                dim=0).numpy()
+
+            evaluator.evaluate(sub_prediction, sub_label, subject_id)
+            plot_middle_slice(subject, args.get("CMAP"), subject_id)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
