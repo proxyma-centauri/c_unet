@@ -115,7 +115,6 @@ def main(args):
 
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
-        print(inputs.shape)
 
         predictions = lightning_model.unet(inputs).cpu()
 
@@ -140,18 +139,19 @@ def main(args):
                                                  dataloader_type=type_loader)
 
     # EVALUATING
-    for type_predictions, batch in list_of_predictions.items():
+    for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
 
-        for subject in batch:
-            subject_id = f"{type_predictions}-{subject.get('name')}"
+        for batch in list_of_batch:
+            for subject in batch:
+                subject_id = f"{type_predictions}-{subject.get('name')}"
 
-            sub_label = subject['label'][tio.DATA].argmax(dim=0).numpy()
-            sub_prediction = subject['prediction'][tio.DATA].argmax(
-                dim=0).numpy()
+                sub_label = subject['label'][tio.DATA].argmax(dim=0).numpy()
+                sub_prediction = subject['prediction'][tio.DATA].argmax(
+                    dim=0).numpy()
 
-            evaluator.evaluate(sub_prediction, sub_label, subject_id)
-            plot_middle_slice(subject, args.get("CMAP"), subject_id)
+                evaluator.evaluate(sub_prediction, sub_label, subject_id)
+                plot_middle_slice(subject, args.get("CMAP"), subject_id)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
