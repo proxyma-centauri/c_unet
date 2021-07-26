@@ -77,7 +77,8 @@ class DataModule(pl.LightningDataModule):
             self.subjects.append(subject)
 
         if self.test_has_labels:
-            for image_path in zip(image_test_paths, label_test_paths):
+            for image_path, label_path in zip(image_test_paths,
+                                              label_test_paths):
                 subject = tio.Subject(name=f"{image_path}",
                                       image=tio.ScalarImage(image_path),
                                       label=tio.LabelMap(label_path))

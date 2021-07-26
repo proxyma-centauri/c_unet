@@ -16,7 +16,7 @@ from c_unet.training.tverskyLosses import FocalTversky_loss
 from c_unet.training.lightningUnet import LightningUnet
 from c_unet.utils.plots.plot import plot_middle_slice
 
-# TODO : subject name for figs
+# TODO : do not evaluate over test if there is no labels
 
 
 def main(args):
@@ -29,6 +29,9 @@ def main(args):
 
     data.prepare_data()
     data.setup()
+
+    print(data.test_subjects[0])
+    print(data.test_subjects[0]["image"].shape)
 
     print('Training:  ', len(data.train_set))
     print('Validation: ', len(data.val_set))
