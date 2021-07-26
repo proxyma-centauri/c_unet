@@ -151,7 +151,7 @@ def main(args):
 
         for batch in list_of_batch:
             for subject in batch:
-                print(subject)
+                print(subject['image'])
                 subject_id = f"{type_predictions}-{subject.get('name')}"
 
                 if should_evaluate_and_plot_normaly:
