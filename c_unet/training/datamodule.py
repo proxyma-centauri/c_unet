@@ -92,7 +92,6 @@ class DataModule(pl.LightningDataModule):
                 self.test_subjects.append(subject)
 
     def get_preprocessing_transform(self):
-        print(self.get_max_shape(self.subjects + self.test_subjects))
         preprocess = tio.Compose([
             tio.ZNormalization(),
             tio.CropOrPad(self.get_max_shape(self.subjects +
