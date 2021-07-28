@@ -71,7 +71,7 @@ def main(args):
 
     callbacks = [pl.callbacks.ModelCheckpoint(monitor='val_loss')]
 
-    if args.get("EARLY_STOPPING") is not None:
+    if args.get("EARLY_STOPPING") is not None and args.get("EARLY_STOPPING"):
         early_stopping = pl.callbacks.early_stopping.EarlyStopping(
             monitor='val_loss')
         callbacks.append(early_stopping)
