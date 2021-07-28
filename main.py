@@ -90,6 +90,7 @@ def main(args):
         gradient_clip_algorithm='value',
         stochastic_weight_avg=True,
         checkpoint_callback=True,
+        progress_bar_refresh_rate=5,
     )
 
     # Training
@@ -120,7 +121,7 @@ def main(args):
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
 
-        predictions = lightning_model.unet(inputs).cpu()
+        predictions = lightning_model.unet(inputs)
 
         batch_subjects = tio.utils.get_subjects_from_batch(batch)
         tio.utils.add_images_from_batch(batch_subjects, predictions,
