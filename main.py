@@ -89,8 +89,7 @@ def main(args):
         gradient_clip_val=args.get("GRADIENT_CLIP"),
         gradient_clip_algorithm='value',
         stochastic_weight_avg=True,
-        checkpoint_callback=True,
-        progress_bar_refresh_rate=5,
+        progress_bar_refresh_rate=1,
     )
 
     # Training
