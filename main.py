@@ -58,6 +58,7 @@ def main(args):
                      args.get("OUT_CHANNELS"),
                      final_activation=args.get("FINAL_ACTIVATION"),
                      nonlinearity=args.get("NONLIN"),
+                     divider=args.get("DIVIDER"),
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
 
