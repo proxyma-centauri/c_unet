@@ -21,6 +21,11 @@ from c_unet.utils.plots.plot import plot_middle_slice
 
 
 def main(args):
+    # CONFIG
+    print("\nYou are running with the following configuration:\n")
+    print(args)
+    print("\n --- \n")
+
     # DATA
     data = DataModule(args.get("PATH_TO_DATA"),
                       subset_name=args.get("SUBSET_NAME"),
