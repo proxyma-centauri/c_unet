@@ -98,7 +98,7 @@ class DataModule(pl.LightningDataModule):
             tio.CropOrPad(self.get_max_shape(self.subjects +
                                              self.test_subjects),
                           mask_name="label"),
-            # tio.EnsureShapeMultiple(8, method='pad'),  # for the U-Net
+            tio.EnsureShapeMultiple(8, method='pad'),  # for the U-Net
             tio.OneHot(),
         ])
         return preprocess
