@@ -194,7 +194,7 @@ if __name__ == "__main__":
                                      default=False,
                                      cast=bool)
 
-    args["GROUP"] = config("GROUP")
+    args["GROUP"] = config("GROUP", default=None)
     args["GROUP_DIM"] = config("GROUP_DIM", cast=int)
     args["IN_CHANNELS"] = 1
     args["OUT_CHANNELS"] = config("OUT_CHANNELS", cast=int)
