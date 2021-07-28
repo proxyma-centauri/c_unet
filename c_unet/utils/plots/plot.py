@@ -18,14 +18,14 @@ def plot_middle_slice(subject,
         nb_columns = 2 + nb_of_classes
 
     # 2 lines for coronal and sagittal
-    fig, axarr = plt.subplots(2, nb_columns, figsize=(25, 18))
+    fig, axarr = plt.subplots(2, nb_columns, figsize=(20, 18))
 
     # Taking the middle slice
     slice_nb_sag = subject['image'][tio.DATA].shape[2] // 2
     slice_nb_coro = subject['image'][tio.DATA].shape[3] // 2
 
     # SAGITTAL
-    image_sag = subject['image'][tio.DATA][:, slice_nb_sag, :, :].squeeze()
+    image_sag = subject['image'][tio.DATA][:, :, slice_nb_sag, :].squeeze()
     prediction_sag = subject['prediction'][tio.DATA].argmax(
         dim=0)[:, slice_nb_sag, :]
     to_print = [prediction_sag]
