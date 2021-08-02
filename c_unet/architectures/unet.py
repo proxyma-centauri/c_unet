@@ -69,7 +69,7 @@ class Unet(nn.Module):
             # Convolutional arguments
             dropout: Optional[bool] = 0.1,
             stride: Union[int, List[int]] = 1,
-            padding: Union[str, int] = 1,
+            padding: Union[str, int] = "same",
             kernel_size: int = 3,
             bias: bool = True,
             dilation: int = 1,
