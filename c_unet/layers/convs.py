@@ -30,7 +30,7 @@ class ConvBlock(nn.Module):
                  out_channels: int,
                  kernel_size: int = 3,
                  stride: Union[int, List[int]] = 1,
-                 padding: Union[str, int] = 1,
+                 padding: Union[str, int] = "same",
                  bias: bool = True,
                  dilation: int = 1,
                  nonlinearity: Optional[str] = "relu",
@@ -164,19 +164,19 @@ class FinalConvolution(nn.Module):
     Add a final convolution with 1x1x1 kernel.
 
     Args:
-        - conv (Module) : Group convolution to perform before final convolution
+        - conv (Module) : convolution to perform before final convolution
         - out_channels (int) Number of output channels
         - final_activation (str) : Final activation layer
     """
-    def __init__(self, conv: nn.Module, out_channels: int,
+    def __init__(self, conv: nn.Module, inter_channels: int, out_channels: int,
                  final_activation: str):
         super(FinalConvolution, self).__init__()
 
         self.conv = conv
-        self.final_conv = ConvBlock(out_channels,
+        self.final_conv = ConvBlock(inter_channels,
                                     out_channels,
                                     kernel_size=1,
-                                    padding=0,
+                                    padding="same",
                                     nonlinearity=final_activation,
                                     normalization="")
 

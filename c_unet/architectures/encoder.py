@@ -48,7 +48,7 @@ class EncoderBlock(nn.Module):
             # Kernel arguments
             kernel_size: int = 3,
             stride: Union[int, List[int]] = 1,
-            padding: Union[str, int] = 1,
+            padding: Union[str, int] = "same",
             # Pooling
             pool_size: Optional[int] = 2,
             pool_stride: Optional[Union[str, int]] = 2,

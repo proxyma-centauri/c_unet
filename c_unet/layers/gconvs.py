@@ -38,7 +38,7 @@ class Gconv3d(nn.Module):
                  kernel_size: int = 3,
                  dilation: int = 1,
                  stride: Union[int, List[int]] = 1,
-                 padding: Union[str, int] = 1,
+                 padding: Union[str, int] = "same",
                  dropout: float = 0.1):
         super(Gconv3d, self).__init__()
         self.in_channels = in_channels
@@ -314,29 +314,29 @@ class FinalGroupConvolution(nn.Module):
     Add a final convolution with 1x1x1 kernel.
 
     Args:
-        - group_convolution (Module) : Group convolution to perform before final convolution
+        - stable_convolution (Module) : Stabilizing 5D convolution to perform before final convolution
         - group_dim : dimension of the sub group
         - out_channels (int) Number of output channels
         - final_activation (str) : Final activation layer
     """
-    def __init__(self, group_convolution: nn.Module, group_dim: int,
+    def __init__(self, stable_convolution: nn.Module, inter_channels: int,
                  out_channels: int, final_activation: str):
         super(FinalGroupConvolution, self).__init__()
 
-        self.g_conv = group_convolution
-        self.reshaping_conv = ConvBlock(out_channels * group_dim,
+        self.stable_convolution = stable_convolution
+        self.reshaping_conv = ConvBlock(inter_channels,
                                         out_channels,
                                         kernel_size=1,
-                                        padding=0,
+                                        padding="same",
                                         nonlinearity=final_activation,
                                         normalization="")
 
     def forward(self, x):
-        x = self.g_conv(x)
-
         # Reshaping input
         bs, c, g, h, w, d = x.shape
         x = x.reshape(bs, c * g, h, w, d)
+
+        x = self.stable_convolution(x)
 
         # Removing group dimension
         x = self.reshaping_conv(x)
