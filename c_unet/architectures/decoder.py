@@ -1,3 +1,4 @@
+from c_unet.utils.concatenation.ReshapedCat import ReshapedCat
 import logging
 import torch
 import torch.nn as nn
@@ -74,6 +75,7 @@ class DecoderBlock(nn.Module):
         self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
+        self.cat = ReshapedCat()
 
         for depth in range(model_depth - 2, -1, -1):
             feat_map_channels = 2**(depth + 1) * self.num_feat_maps
@@ -161,7 +163,7 @@ class DecoderBlock(nn.Module):
             if key.startswith("upsample"):
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
-                x = torch.cat((down_sampling_features[int(key[-1])], x), dim=1)
+                x = self.cat(x, down_sampling_features[int(key[-1])])
             else:
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
