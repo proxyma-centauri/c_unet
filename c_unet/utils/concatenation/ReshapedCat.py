@@ -15,9 +15,6 @@ class ReshapedCat(nn.Module):
         down_sampling_feature = down_sampling_feature.reshape(
             [bs, c * g, h, w, d])
 
-        bs, c, g, h, w, d = x.shape
-        x = x.reshape([bs, c * g, h, w, d])
-
         # Concatenating
         x = torch.cat((down_sampling_feature, x), dim=1)
 
