@@ -149,7 +149,13 @@ class ConvResBlock(nn.Module):
             dilation,
             nonlinearity="",  # No nonlinearity
             normalization=normalization)
-        self.relu = nn.ReLU()
+
+        if nonlinearity == "leaky-relu":
+            self.relu = nn.LeakyReLU(inplace=True)
+        elif nonlinearity == "elu":
+            self.relu = nn.ELU(inplace=True)
+        else:
+            self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         z = self.match_channels(x)

@@ -117,22 +117,21 @@ class DecoderBlock(nn.Module):
                     normalization=normalization)
 
             if depth == 0:
-                in_channels, inter_channels = inter_channels, feat_map_channels * 2
+                in_channels, inter_channels = feat_map_channels * 2, feat_map_channels * 2
 
                 # The group dimension is reshaped into the channel one before the convolution in final_conv
                 if group:
                     in_channels = in_channels * group_dim
 
-                final_conv = ConvResBlock(in_channels,
-                                          inter_channels,
-                                          inter_channels,
-                                          kernel_size,
-                                          stride,
-                                          padding,
-                                          bias=bias,
-                                          dilation=dilation,
-                                          nonlinearity=nonlinearity,
-                                          normalization=normalization)
+                final_conv = ConvBlock(in_channels,
+                                       inter_channels,
+                                       kernel_size,
+                                       stride,
+                                       padding,
+                                       bias=bias,
+                                       dilation=dilation,
+                                       nonlinearity=nonlinearity,
+                                       normalization=normalization)
                 if group:
                     self.module_dict["final_conv"] = FinalGroupConvolution(
                         final_conv, inter_channels, out_channels,
