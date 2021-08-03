@@ -1,11 +1,10 @@
-from c_unet.utils.concatenation.ReshapedCat import ReshapedCat
 import logging
 import torch
 import torch.nn as nn
 from typing import List, Optional, Union
 
-from c_unet.utils.interpolation.ReshapedInterpolate import ReshapedInterpolate
 from c_unet.utils.interpolation.Interpolate import Interpolate
+from c_unet.utils.concatenation.OperationAndCat import OperationAndCat
 
 from c_unet.layers.gconvs import GconvResBlock, FinalGroupConvolution
 from c_unet.layers.convs import ConvBlock, ConvResBlock, FinalConvolution
@@ -75,7 +74,8 @@ class DecoderBlock(nn.Module):
         self.logger = logging.getLogger(__name__)
 
         self.module_dict = nn.ModuleDict()
-        self.cat = ReshapedCat()
+        self.cat = OperationAndCat(logger=self.logger)
+        self.group = group
 
         for depth in range(model_depth - 2, -1, -1):
             feat_map_channels = 2**(depth + 1) * self.num_feat_maps
@@ -151,16 +151,9 @@ class DecoderBlock(nn.Module):
         """
         for key, layer in self.module_dict.items():
             if key.startswith("upsample"):
-                # Reshaping
-                bs, c, g, h, w, d = x.shape
-                x = x.reshape([bs, c * g, h, w, d])
+                down_sampling_feature = down_sampling_features[int(key[-1])]
+                x = self.cat(x, down_sampling_feature, key, layer, self.group)
 
-                # Upsampling
-                x = layer(x)
-                self.logger.debug(f"{key}, {x.shape}")
-
-                # Concatenating
-                x = self.cat(x, down_sampling_features[int(key[-1])])
             else:
                 x = layer(x)
                 self.logger.debug(f"{key}, {x.shape}")
