@@ -112,9 +112,9 @@ class EncoderBlock(nn.Module):
 
             if depth == 1:
                 self.dilated_dense = DilatedDenseBlock(
-                    in_channels, root_feat_maps * 2, in_channels, kernel_size,
-                    stride, dropout, bias, nonlinearity, normalization, 3, 2,
-                    group, group_dim)
+                    in_channels, feat_map_channels * 2, in_channels,
+                    kernel_size, stride, dropout, bias, nonlinearity,
+                    normalization, 3, 2, group, group_dim)
 
             if depth == model_depth - 1:
                 break
