@@ -21,6 +21,11 @@ from c_unet.utils.plots.plot import plot_middle_slice
 
 
 def main(args):
+    # CONFIG
+    print("\nYou are running with the following configuration:\n")
+    print(args)
+    print("\n --- \n")
+
     # DATA
     data = DataModule(args.get("PATH_TO_DATA"),
                       subset_name=args.get("SUBSET_NAME"),
@@ -53,6 +58,7 @@ def main(args):
                      args.get("OUT_CHANNELS"),
                      final_activation=args.get("FINAL_ACTIVATION"),
                      nonlinearity=args.get("NONLIN"),
+                     divider=args.get("DIVIDER"),
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
 
@@ -63,8 +69,9 @@ def main(args):
                                              name=args.get("LOG_NAME"),
                                              default_hp_metric=False)
 
-    callbacks = []
-    if args.get("EARLY_STOPPING") is not None:
+    callbacks = [pl.callbacks.ModelCheckpoint(monitor='val_loss')]
+
+    if args.get("EARLY_STOPPING") is not None and args.get("EARLY_STOPPING"):
         early_stopping = pl.callbacks.early_stopping.EarlyStopping(
             monitor='val_loss')
         callbacks.append(early_stopping)
@@ -88,7 +95,7 @@ def main(args):
         gradient_clip_val=args.get("GRADIENT_CLIP"),
         gradient_clip_algorithm='value',
         stochastic_weight_avg=True,
-        checkpoint_callback=True,
+        progress_bar_refresh_rate=2,
     )
 
     # Training
@@ -119,7 +126,7 @@ def main(args):
         if args.get("GROUP"):
             inputs = inputs.unsqueeze(1)
 
-        predictions = lightning_model.unet(inputs).cpu()
+        predictions = lightning_model.unet(inputs)
 
         batch_subjects = tio.utils.get_subjects_from_batch(batch)
         tio.utils.add_images_from_batch(batch_subjects, predictions,
@@ -194,7 +201,7 @@ if __name__ == "__main__":
                                      default=False,
                                      cast=bool)
 
-    args["GROUP"] = config("GROUP")
+    args["GROUP"] = config("GROUP", default=None)
     args["GROUP_DIM"] = config("GROUP_DIM", cast=int)
     args["IN_CHANNELS"] = 1
     args["OUT_CHANNELS"] = config("OUT_CHANNELS", cast=int)
