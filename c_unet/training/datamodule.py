@@ -94,9 +94,10 @@ class DataModule(pl.LightningDataModule):
     def get_preprocessing_transform(self):
         preprocess = tio.Compose([
             tio.ZNormalization(),
-            # tio.CropOrPad(
-            #     self.get_max_shape(self.subjects + self.test_subjects)),
-            # tio.EnsureShapeMultiple(8),  # for the U-Net
+            tio.CropOrPad(self.get_max_shape(self.subjects +
+                                             self.test_subjects),
+                          mask_name="label"),
+            tio.EnsureShapeMultiple(8, method='pad'),  # for the U-Net
             tio.OneHot(),
         ])
         return preprocess

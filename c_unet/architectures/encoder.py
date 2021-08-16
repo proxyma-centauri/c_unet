@@ -48,7 +48,7 @@ class EncoderBlock(nn.Module):
             # Kernel arguments
             kernel_size: int = 3,
             stride: Union[int, List[int]] = 1,
-            padding: Union[str, int] = 1,
+            padding: Union[str, int] = "same",
             # Pooling
             pool_size: Optional[int] = 2,
             pool_stride: Optional[Union[str, int]] = 2,
@@ -80,39 +80,39 @@ class EncoderBlock(nn.Module):
 
             if group:
                 is_first_conv = True if (depth == 0) else False
-                self.conv_block = GconvResBlock(group,
-                                                group_dim,
-                                                in_channels,
-                                                feat_map_channels,
-                                                feat_map_channels,
-                                                is_first_conv,
-                                                kernel_size,
-                                                stride,
-                                                padding,
-                                                dilation=dilation,
-                                                dropout=dropout,
-                                                bias=bias,
-                                                nonlinearity=nonlinearity,
-                                                normalization=normalization)
+                self.module_dict[f"conv_block_{depth}"] = GconvResBlock(
+                    group,
+                    group_dim,
+                    in_channels,
+                    feat_map_channels,
+                    feat_map_channels,
+                    is_first_conv,
+                    kernel_size,
+                    stride,
+                    padding,
+                    dilation=dilation,
+                    dropout=dropout,
+                    bias=bias,
+                    nonlinearity=nonlinearity,
+                    normalization=normalization)
             else:
-                self.conv_block = ConvResBlock(in_channels,
-                                               feat_map_channels,
-                                               feat_map_channels,
-                                               kernel_size,
-                                               stride,
-                                               padding,
-                                               bias=bias,
-                                               dilation=dilation,
-                                               nonlinearity=nonlinearity,
-                                               normalization=normalization)
-
-            self.module_dict[f"conv_block_{depth}"] = self.conv_block
+                self.module_dict[f"conv_block_{depth}"] = ConvResBlock(
+                    in_channels,
+                    feat_map_channels,
+                    feat_map_channels,
+                    kernel_size,
+                    stride,
+                    padding,
+                    bias=bias,
+                    dilation=dilation,
+                    nonlinearity=nonlinearity,
+                    normalization=normalization)
 
             in_channels, feat_map_channels = feat_map_channels, feat_map_channels * 2
 
             if depth == 1:
                 self.dilated_dense = DilatedDenseBlock(
-                    in_channels, root_feat_maps * 2, in_channels, kernel_size,
+                    in_channels, feat_map_channels, in_channels, kernel_size,
                     stride, dropout, bias, nonlinearity, normalization, 3, 2,
                     group, group_dim)
 
@@ -120,15 +120,15 @@ class EncoderBlock(nn.Module):
                 break
             else:
                 if group:
-                    self.pooling = GPool3d(pool_over="hwd",
-                                           reduction=pool_reduction,
-                                           reduction_factor=pool_factor)
+                    self.module_dict[f"max_pooling_{depth}"] = GPool3d(
+                        pool_over="hwd",
+                        reduction=pool_reduction,
+                        reduction_factor=pool_factor)
                 else:
-                    self.pooling = nn.MaxPool3d(kernel_size=pool_size,
-                                                stride=pool_stride,
-                                                padding=pool_padding)
-
-                self.module_dict[f"max_pooling_{depth}"] = self.pooling
+                    self.module_dict[f"max_pooling_{depth}"] = nn.MaxPool3d(
+                        kernel_size=pool_size,
+                        stride=pool_stride,
+                        padding=pool_padding)
 
     def forward(self, x):
         down_sampling_features = []

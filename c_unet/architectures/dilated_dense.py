@@ -61,7 +61,7 @@ class DilatedDenseBlock(nn.Module):
 
             for _ in range(dilation_increase_step):
                 dilation = 2**(step_nb)
-                padding = (dilation * (kernel_size - 1) + 1) // 2
+                padding = "same"
 
                 if group:
                     self.conv_block = GconvResBlock(
@@ -77,7 +77,7 @@ class DilatedDenseBlock(nn.Module):
                         padding=padding,
                         dilation=dilation,
                         dropout=dropout,
-                        first_padding=0,
+                        first_padding=padding,
                         bias=bias,
                         nonlinearity=nonlinearity,
                         normalization=normalization)
@@ -90,7 +90,7 @@ class DilatedDenseBlock(nn.Module):
                                                    stride=stride,
                                                    padding=padding,
                                                    bias=bias,
-                                                   first_padding=0,
+                                                   first_padding=padding,
                                                    dilation=dilation,
                                                    nonlinearity=nonlinearity,
                                                    normalization=normalization)
