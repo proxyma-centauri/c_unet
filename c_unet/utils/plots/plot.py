@@ -11,16 +11,17 @@ def plot_middle_slice(subject,
     """
     Plots some slices of the image, labels and predictions
     """
+    nb_rows = 2 + nb_of_classes
+
+    # 2 figs for coronal and sagittal
     if with_labels:
         # Image, all labels, all predictions, then 2 more columns per class
-        nb_columns = 3 + 2 * nb_of_classes
+        fig_sag, axarr_sag = plt.subplots(nb_rows, 2, figsize=(10, 20))
+        fig_coro, axarr_coro = plt.subplots(nb_rows, 2, figsize=(10, 20))
     else:
         # No predictions printed in this case
-        nb_columns = 2 + nb_of_classes
-
-    # 2 lines for coronal and sagittal
-    fig_sag, axarr_sag = plt.subplots(1, nb_columns, figsize=(20, 10))
-    fig_coro, axarr_coro = plt.subplots(1, nb_columns, figsize=(20, 10))
+        fig_sag, axarr_sag = plt.subplots(nb_rows, 1, figsize=(10, 20))
+        fig_coro, axarr_coro = plt.subplots(nb_rows, 1, figsize=(10, 20))
 
     # Taking the middle slice
     slice_nb_sag = subject['image'][tio.DATA].shape[1] // 2
@@ -30,72 +31,95 @@ def plot_middle_slice(subject,
     image_sag = subject['image'][tio.DATA][:, slice_nb_sag, :, :].squeeze()
     prediction_sag = subject['prediction'][tio.DATA].argmax(
         dim=0)[slice_nb_sag, :, :]
-    to_print = [prediction_sag]
 
-    if with_labels:
-        label_sag = subject['label'][tio.DATA].argmax(
-            dim=0)[slice_nb_sag, :, :]
-        to_print.append(label_sag)
+    to_print = {}
 
+    ## Adding all images to print
     for index in range(nb_of_classes):
         prediction_sag_i = subject['prediction'][tio.DATA][index,
                                                            slice_nb_sag, :, :]
-        to_print.append(prediction_sag_i)
+        to_print[index] = [prediction_sag_i]
 
         if with_labels:
             label_sag_i = subject['label'][tio.DATA][index, slice_nb_sag, :, :]
-            to_print.append(label_sag_i)
+            to_print[index].append(label_sag_i)
 
-    axarr_sag[0].imshow(image_sag, cmap="gray")
+    to_print[nb_of_classes + 1] = [prediction_sag]
+    if with_labels:
+        label_sag = subject['label'][tio.DATA].argmax(
+            dim=0)[slice_nb_sag, :, :]
+        to_print[nb_of_classes + 1].append(label_sag)
 
-    for index in range(0, nb_columns - 1):
-        axarr_sag[index + 1].imshow(to_print[index], cmap=cmap)
+    ## Displaying images
+    if with_labels:
+        for key, items in to_print.items():
+            axarr_sag[key, 0].imshow(items[0], cmap=cmap)
+            axarr_sag[key, 1].imshow(items[1], cmap=cmap)
+
+        axarr_sag[nb_rows - 1, 0].imshow(image_sag, cmap="gray")
+
+    else:
+        for key, items in to_print.items():
+            axarr_sag[key].imshow(items[0], cmap=cmap)
+
+        axarr_sag[nb_rows - 1].imshow(image_sag, cmap="gray")
 
     # CORONAL
     image_coro = subject['image'][tio.DATA][:, :, slice_nb_coro, :].squeeze()
     prediction_coro = subject['prediction'][tio.DATA].argmax(
         dim=0)[:, slice_nb_coro, :]
-    to_print = [prediction_coro]
-    if with_labels:
-        label_coro = subject['label'][tio.DATA].argmax(dim=0)[:,
-                                                              slice_nb_coro, :]
-        to_print.append(label_coro)
+
+    to_print = {}
 
     for index in range(nb_of_classes):
         prediction_coro_i = subject['prediction'][tio.DATA][index, :,
                                                             slice_nb_coro, :]
-        to_print.append(prediction_coro_i)
+        to_print[index] = prediction_coro_i
 
         if with_labels:
             label_coro_i = subject['label'][tio.DATA][index, :,
                                                       slice_nb_coro, :]
-            to_print.append(label_coro_i)
+            to_print[index].append(label_coro_i)
 
-    axarr_coro[0].imshow(image_coro, cmap="gray")
-    for index in range(0, nb_columns - 1):
-        axarr_coro[index + 1].imshow(to_print[index], cmap=cmap)
+    to_print[nb_of_classes + 1] = [prediction_coro]
+    if with_labels:
+        label_coro = subject['label'][tio.DATA].argmax(dim=0)[:,
+                                                              slice_nb_coro, :]
+        to_print[nb_of_classes + 1].append(label_coro)
 
-    # Formatting
-    if classes_names:
-        cols_names = classes_names
+    # Displaying
+    if with_labels:
+        for key, items in to_print.items():
+            axarr_coro[key, 0].imshow(items[0], cmap=cmap)
+            axarr_coro[key, 1].imshow(items[1], cmap=cmap)
+
+        axarr_coro[nb_rows - 1, 0].imshow(image_coro, cmap="gray")
+
     else:
-        cols_names = range(nb_of_classes)
+        for key, items in to_print.items():
+            axarr_coro[key].imshow(items[0], cmap=cmap)
 
-    label_cols = ['Label {}'.format(row) for row in cols_names]
-    pred_cols = ['Pred {}'.format(row) for row in cols_names]
-    all_cols = list(zip(pred_cols, label_cols))
+        axarr_coro[nb_rows - 1].imshow(image_coro, cmap="gray")
+
+    # FORMATTING
+    rows = classes_names + ['All classes', 'Image']
 
     if with_labels:
-        cols = ['Image', 'Pred', 'Label'
-                ] + [elt for sublist in all_cols for elt in sublist]
+        cols = ['Pred', 'Label']
+        for ax, col in zip(axarr_sag, cols):
+            ax.set_title(col)
+        for ax, col in zip(axarr_coro, cols):
+            ax.set_title(col)
 
+        for ax, row in zip(axarr_sag[:, 0], rows):
+            ax.set_ylabel(row, rotation=0, size='large')
+        for ax, row in zip(axarr_coro[:, 0], rows):
+            ax.set_ylabel(row, rotation=0, size='large')
     else:
-        cols = ['Image', 'Label'] + label_cols
-
-    for ax, col in zip(axarr_sag, cols):
-        ax.set_title(col)
-    for ax, col in zip(axarr_coro, cols):
-        ax.set_title(col)
+        for ax, row in zip(axarr_sag, rows):
+            ax.set_ylabel(row, rotation=0, size='large')
+        for ax, row in zip(axarr_coro, rows):
+            ax.set_ylabel(row, rotation=0, size='large')
 
     fig_sag.tight_layout()
     fig_coro.tight_layout()
