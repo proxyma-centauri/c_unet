@@ -19,7 +19,8 @@ def plot_middle_slice(subject,
         nb_columns = 2 + nb_of_classes
 
     # 2 lines for coronal and sagittal
-    fig, axarr = plt.subplots(2, nb_columns, figsize=(20, 18))
+    fig_sag, axarr_sag = plt.subplots(1, nb_columns, figsize=(20, 10))
+    fig_coro, axarr_coro = plt.subplots(1, nb_columns, figsize=(20, 10))
 
     # Taking the middle slice
     slice_nb_sag = subject['image'][tio.DATA].shape[1] // 2
@@ -45,10 +46,10 @@ def plot_middle_slice(subject,
             label_sag_i = subject['label'][tio.DATA][index, slice_nb_sag, :, :]
             to_print.append(label_sag_i)
 
-    axarr[0, 0].imshow(image_sag, cmap="gray")
+    axarr_sag[0, 0].imshow(image_sag, cmap="gray")
 
     for index in range(0, nb_columns - 1):
-        axarr[0, index + 1].imshow(to_print[index], cmap=cmap)
+        axarr_sag[0, index + 1].imshow(to_print[index], cmap=cmap)
 
     # CORONAL
     image_coro = subject['image'][tio.DATA][:, :, slice_nb_coro, :].squeeze()
@@ -70,9 +71,9 @@ def plot_middle_slice(subject,
                                                       slice_nb_coro, :]
             to_print.append(label_coro_i)
 
-    axarr[1, 0].imshow(image_coro, cmap="gray")
+    axarr_coro[0, 0].imshow(image_coro, cmap="gray")
     for index in range(0, nb_columns - 1):
-        axarr[1, index + 1].imshow(to_print[index], cmap=cmap)
+        axarr_coro[0, index + 1].imshow(to_print[index], cmap=cmap)
 
     # Formatting
     if classes_names:
@@ -91,9 +92,16 @@ def plot_middle_slice(subject,
     else:
         cols = ['Image', 'Label'] + label_cols
 
-    for ax, col in zip(axarr[0], cols):
+    for ax, col in zip(axarr_sag[0], cols):
+        ax.set_title(col)
+    for ax, col in zip(axarr_coro[0], cols):
         ax.set_title(col)
 
-    fig.tight_layout()
-    plt.savefig(f"{save_name}.png")
-    plt.close(fig)
+    fig_sag.tight_layout()
+    fig_coro.tight_layout()
+
+    fig_sag.savefig(f"{save_name}-SAG.png")
+    fig_coro.savefig(f"{save_name}-CORO.png")
+
+    plt.close(fig_sag)
+    plt.close(fig_coro)
