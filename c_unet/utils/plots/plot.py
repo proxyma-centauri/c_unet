@@ -22,27 +22,27 @@ def plot_middle_slice(subject,
     fig, axarr = plt.subplots(2, nb_columns, figsize=(20, 18))
 
     # Taking the middle slice
-    slice_nb_sag = subject['image'][tio.DATA].shape[2] // 2
+    slice_nb_sag = subject['image'][tio.DATA].shape[1] // 2
     slice_nb_coro = subject['image'][tio.DATA].shape[3] // 2
 
-    # SAGITTAL
-    image_sag = subject['image'][tio.DATA][:, :, slice_nb_sag, :].squeeze()
+    # SAGITTAL # [:, :, slice_nb_sag, :] [:, slice_nb_sag, :]
+    image_sag = subject['image'][tio.DATA][:, slice_nb_sag, :, :].squeeze()
     prediction_sag = subject['prediction'][tio.DATA].argmax(
-        dim=0)[:, slice_nb_sag, :]
+        dim=0)[slice_nb_sag, :, :]
     to_print = [prediction_sag]
 
     if with_labels:
-        label_sag = subject['label'][tio.DATA].argmax(dim=0)[:,
-                                                             slice_nb_sag, :]
+        label_sag = subject['label'][tio.DATA].argmax(
+            dim=0)[slice_nb_sag, :, :]
         to_print.append(label_sag)
 
     for index in range(nb_of_classes):
-        prediction_sag_i = subject['prediction'][tio.DATA][index, :,
-                                                           slice_nb_sag, :]
+        prediction_sag_i = subject['prediction'][tio.DATA][index,
+                                                           slice_nb_sag, :, :]
         to_print.append(prediction_sag_i)
 
         if with_labels:
-            label_sag_i = subject['label'][tio.DATA][index, :, slice_nb_sag, :]
+            label_sag_i = subject['label'][tio.DATA][index, slice_nb_sag, :, :]
             to_print.append(label_sag_i)
 
     axarr[0, 0].imshow(image_sag, cmap="gray")
