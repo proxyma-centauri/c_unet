@@ -170,22 +170,20 @@ def main(args):
 
                     evaluator.evaluate(sub_prediction, sub_label, subject_id)
 
-                plot_middle_slice(
-                    subject,
-                    nb_of_classes=len(args.get("CLASSES_NAME")),
-                    cmap=args.get("CMAP"),
-                    save_name=f"results/{args.get('LOG_NAME')}/{subject_id}",
-                    classes_names=args.get("CLASSES_NAME"),
-                    with_labels=should_evaluate_and_plot_normaly)
+                plot_middle_slice(subject,
+                                  nb_of_classes=len(args.get("CLASSES_NAME")),
+                                  cmap=args.get("CMAP"),
+                                  save_name=f"results/{log_name}/{subject_id}",
+                                  classes_names=args.get("CLASSES_NAME"),
+                                  with_labels=should_evaluate_and_plot_normaly)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
     writer.ConsoleStatisticsWriter(functions=functions).write(
         evaluator.results)
 
-    writer.CSVWriter(
-        f"results/{args.get('LOG_NAME')}/metrics_report.csv").write(
-            evaluator.results)
+    writer.CSVWriter(f"results/{log_name}/metrics_report.csv").write(
+        evaluator.results)
 
 
 if __name__ == "__main__":
