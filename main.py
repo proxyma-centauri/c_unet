@@ -177,6 +177,7 @@ def main(args):
                     nb_of_classes=len(args.get("CLASSES_NAME")),
                     cmap=args.get("CMAP"),
                     save_name=f"results/{args.get('LOG_NAME')}/{subject_id}",
+                    classes_name=args.get("CLASSES_NAME"),
                     with_labels=should_evaluate_and_plot_normaly)
 
     # SAVING METRICS

@@ -6,6 +6,7 @@ def plot_middle_slice(subject,
                       nb_of_classes,
                       cmap,
                       save_name,
+                      classes_names=None,
                       with_labels=True):
     """
     Plots some slices of the image, labels and predictions
@@ -74,8 +75,13 @@ def plot_middle_slice(subject,
         axarr[1, index + 1].imshow(to_print[index], cmap=cmap)
 
     # Formatting
-    label_cols = ['Label {}'.format(row) for row in range(nb_of_classes)]
-    pred_cols = ['Pred {}'.format(row) for row in range(nb_of_classes)]
+    if classes_names:
+        cols_names = classes_names
+    else:
+        cols_names = range(nb_of_classes)
+
+    label_cols = ['Label {}'.format(row) for row in cols_names]
+    pred_cols = ['Pred {}'.format(row) for row in cols_names]
     all_cols = list(zip(pred_cols, label_cols))
 
     if with_labels:
