@@ -44,11 +44,11 @@ def plot_middle_slice(subject,
             label_sag_i = subject['label'][tio.DATA][index, slice_nb_sag, :, :]
             to_print[index].append(label_sag_i)
 
-    to_print[nb_of_classes + 1] = [prediction_sag]
+    to_print[nb_of_classes] = [prediction_sag]
     if with_labels:
         label_sag = subject['label'][tio.DATA].argmax(
             dim=0)[slice_nb_sag, :, :]
-        to_print[nb_of_classes + 1].append(label_sag)
+        to_print[nb_of_classes].append(label_sag)
 
     ## Displaying images
     if with_labels:
@@ -74,18 +74,18 @@ def plot_middle_slice(subject,
     for index in range(nb_of_classes):
         prediction_coro_i = subject['prediction'][tio.DATA][index, :,
                                                             slice_nb_coro, :]
-        to_print[index] = prediction_coro_i
+        to_print[index] = [prediction_coro_i]
 
         if with_labels:
             label_coro_i = subject['label'][tio.DATA][index, :,
                                                       slice_nb_coro, :]
             to_print[index].append(label_coro_i)
 
-    to_print[nb_of_classes + 1] = [prediction_coro]
+    to_print[nb_of_classes] = [prediction_coro]
     if with_labels:
         label_coro = subject['label'][tio.DATA].argmax(dim=0)[:,
                                                               slice_nb_coro, :]
-        to_print[nb_of_classes + 1].append(label_coro)
+        to_print[nb_of_classes].append(label_coro)
 
     # Displaying
     if with_labels:
@@ -106,9 +106,9 @@ def plot_middle_slice(subject,
 
     if with_labels:
         cols = ['Pred', 'Label']
-        for ax, col in zip(axarr_sag, cols):
+        for ax, col in zip(axarr_sag[0], cols):
             ax.set_title(col)
-        for ax, col in zip(axarr_coro, cols):
+        for ax, col in zip(axarr_coro[0], cols):
             ax.set_title(col)
 
         for ax, row in zip(axarr_sag[:, 0], rows):
