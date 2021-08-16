@@ -149,7 +149,7 @@ def main(args):
                                                  dataloader_type=type_loader)
 
     # EVALUATING
-    Path(f"results/{args.get('LOG_NAME')}").mkdir(parents=True, exist_ok=True)
+    Path(f"results/{log_name}").mkdir(parents=True, exist_ok=True)
 
     for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
