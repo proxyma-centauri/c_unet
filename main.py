@@ -17,8 +17,6 @@ from c_unet.training.tverskyLosses import FocalTversky_loss
 from c_unet.training.lightningUnet import LightningUnet
 from c_unet.utils.plots.plot import plot_middle_slice
 
-# TODO : do not evaluate over test if there is no labels
-
 
 def main(args):
     # CONFIG
