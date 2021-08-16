@@ -65,8 +65,9 @@ def main(args):
     # LIGHTNING
     loss = FocalTversky_loss({"apply_nonlin": None})
 
+    log_name = f"{args.get('LOG_NAME'), args.get('MODEL_DEPTH'), args.get('LEARNING_RATE'), args.get('GRADIENT_CLIP')}"
     tb_logger = pl_loggers.TensorBoardLogger(args.get("LOGS_DIR"),
-                                             name=args.get("LOG_NAME"),
+                                             name=log_name,
                                              default_hp_metric=False)
 
     callbacks = [pl.callbacks.ModelCheckpoint(monitor='val_loss')]
