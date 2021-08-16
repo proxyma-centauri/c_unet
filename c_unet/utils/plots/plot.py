@@ -51,23 +51,23 @@ def plot_middle_slice(subject,
         axarr[0, index + 1].imshow(to_print[index], cmap=cmap)
 
     # CORONAL
-    image_coro = subject['image'][tio.DATA][:, :, :, slice_nb_coro].squeeze()
+    image_coro = subject['image'][tio.DATA][:, :, slice_nb_coro, :].squeeze()
     prediction_coro = subject['prediction'][tio.DATA].argmax(
-        dim=0)[:, :, slice_nb_coro]
+        dim=0)[:, slice_nb_coro, :]
     to_print = [prediction_coro]
     if with_labels:
-        label_coro = subject['label'][tio.DATA].argmax(dim=0)[:, :,
-                                                              slice_nb_coro]
+        label_coro = subject['label'][tio.DATA].argmax(dim=0)[:,
+                                                              slice_nb_coro, :]
         to_print.append(label_coro)
 
     for index in range(nb_of_classes):
-        prediction_coro_i = subject['prediction'][tio.DATA][index, :, :,
-                                                            slice_nb_coro]
+        prediction_coro_i = subject['prediction'][tio.DATA][index, :,
+                                                            slice_nb_coro, :]
         to_print.append(prediction_coro_i)
 
         if with_labels:
-            label_coro_i = subject['label'][tio.DATA][index, :, :,
-                                                      slice_nb_coro]
+            label_coro_i = subject['label'][tio.DATA][index, :,
+                                                      slice_nb_coro, :]
             to_print.append(label_coro_i)
 
     axarr[1, 0].imshow(image_coro, cmap="gray")
