@@ -23,7 +23,7 @@ def plot_middle_slice(subject,
 
     # Taking the middle slice
     slice_nb_sag = subject['image'][tio.DATA].shape[1] // 2
-    slice_nb_coro = subject['image'][tio.DATA].shape[3] // 2
+    slice_nb_coro = subject['image'][tio.DATA].shape[2] // 2
 
     # SAGITTAL # [:, :, slice_nb_sag, :] [:, slice_nb_sag, :]
     image_sag = subject['image'][tio.DATA][:, slice_nb_sag, :, :].squeeze()
