@@ -96,3 +96,4 @@ def plot_middle_slice(subject,
 
     fig.tight_layout()
     plt.savefig(f"{save_name}.png")
+    plt.close(fig)
