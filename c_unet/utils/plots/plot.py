@@ -46,10 +46,10 @@ def plot_middle_slice(subject,
             label_sag_i = subject['label'][tio.DATA][index, slice_nb_sag, :, :]
             to_print.append(label_sag_i)
 
-    axarr_sag[0, 0].imshow(image_sag, cmap="gray")
+    axarr_sag[0].imshow(image_sag, cmap="gray")
 
     for index in range(0, nb_columns - 1):
-        axarr_sag[0, index + 1].imshow(to_print[index], cmap=cmap)
+        axarr_sag[index + 1].imshow(to_print[index], cmap=cmap)
 
     # CORONAL
     image_coro = subject['image'][tio.DATA][:, :, slice_nb_coro, :].squeeze()
@@ -71,9 +71,9 @@ def plot_middle_slice(subject,
                                                       slice_nb_coro, :]
             to_print.append(label_coro_i)
 
-    axarr_coro[0, 0].imshow(image_coro, cmap="gray")
+    axarr_coro[0].imshow(image_coro, cmap="gray")
     for index in range(0, nb_columns - 1):
-        axarr_coro[0, index + 1].imshow(to_print[index], cmap=cmap)
+        axarr_coro[index + 1].imshow(to_print[index], cmap=cmap)
 
     # Formatting
     if classes_names:
@@ -92,9 +92,9 @@ def plot_middle_slice(subject,
     else:
         cols = ['Image', 'Label'] + label_cols
 
-    for ax, col in zip(axarr_sag[0], cols):
+    for ax, col in zip(axarr_sag, cols):
         ax.set_title(col)
-    for ax, col in zip(axarr_coro[0], cols):
+    for ax, col in zip(axarr_coro, cols):
         ax.set_title(col)
 
     fig_sag.tight_layout()
