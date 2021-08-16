@@ -73,12 +73,17 @@ mkdir logs
     │   ├── convs.py
     │   └── gconvs.py
     ├── training # Pytorch lightning models and structures definition
+    │   ├── CrossEntropyLosses.py
     │   ├── datamodule.py
     │   ├── __init__.py
     │   ├── lightningUnet.py
     │   ├── GDiceLossV2.py
     │   └── tverskyLosses.py
     └── utils
+        ├── concatenation # Custom concatenation layers
+        │   ├── __init__.py
+        │   ├── OperationAndCat.py
+        │   └── ReshapedCat.py
         ├── dropout # Custom dropout layers
         │   ├── GaussianDropout.py
         │   └── __init__.py
@@ -99,6 +104,9 @@ mkdir logs
         │   ├── ReshapedBatchNorm.py
         │   ├── ReshapedSwitchNorm.py
         │   └── SwitchNorm3d.py
+        ├── plots # Logging definition module
+        │   ├── __init__.py
+        │   └── plot.py
         └── pooling # Custom pooling layers
             ├── __init__.py
             └── GPool3d.py
