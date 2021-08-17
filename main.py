@@ -60,10 +60,6 @@ def main(args):
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
 
-    # LOAD FROM CHECKPOINTS
-    if args.get("LOAD_FROM_CHECKPOINTS"):
-        model = model.load_from_checkpoint(args.get("CHECKPOINT_PATH"))
-
     # LIGHTNING
     loss = FocalTversky_loss({"apply_nonlin": None})
 
@@ -79,12 +75,17 @@ def main(args):
             monitor='val_loss')
         callbacks.append(early_stopping)
 
-    lightning_model = LightningUnet(
-        loss,
-        torch.optim.AdamW,
-        model,
-        learning_rate=args.get("LEARNING_RATE"),
-        gradients_histograms=args.get("HISTOGRAMS"))
+    # LOAD FROM CHECKPOINTS
+    if args.get("LOAD_FROM_CHECKPOINTS"):
+        lightning_model = LightningUnet.load_from_checkpoint(
+            args.get("CHECKPOINT_PATH"))
+    else:
+        lightning_model = LightningUnet(
+            loss,
+            torch.optim.AdamW,
+            model,
+            learning_rate=args.get("LEARNING_RATE"),
+            gradients_histograms=args.get("HISTOGRAMS"))
 
     # TRAINING
     if args.get("SHOULD_TRAIN"):
