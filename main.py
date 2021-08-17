@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 import torch
 import torchio as tio
 import pytorch_lightning as pl
@@ -77,8 +78,8 @@ def main(args):
 
     # LOAD FROM CHECKPOINTS
     if args.get("LOAD_FROM_CHECKPOINTS"):
-        lightning_model = LightningUnet.load_from_checkpoint(
-            args.get("CHECKPOINT_PATH"))
+        path_checkpoint = os.path.abspath(args.get("CHECKPOINTS_PATH"))
+        lightning_model = LightningUnet.load_from_checkpoint(path_checkpoint)
     else:
         lightning_model = LightningUnet(
             loss,
