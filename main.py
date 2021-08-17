@@ -60,6 +60,10 @@ def main(args):
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
 
+    # LOAD FROM CHECKPOINTS
+    if args.get("LOAD_FROM_CHECKPOINTS"):
+        model = model.load_from_checkpoint(args.get("CHECKPOINT_PATH"))
+
     # LIGHTNING
     loss = FocalTversky_loss({"apply_nonlin": None})
 
@@ -82,27 +86,30 @@ def main(args):
         learning_rate=args.get("LEARNING_RATE"),
         gradients_histograms=args.get("HISTOGRAMS"))
 
-    trainer = pl.Trainer(
-        gpus=args.get("GPUS"),
-        precision=args.get("PRECISION"),
-        log_gpu_memory=True,
-        max_epochs=args.get("MAX_EPOCHS"),
-        log_every_n_steps=args.get("LOG_STEPS"),
-        logger=tb_logger,
-        callbacks=callbacks,
-        benchmark=True,
-        gradient_clip_val=args.get("GRADIENT_CLIP"),
-        gradient_clip_algorithm='value',
-        stochastic_weight_avg=True,
-        progress_bar_refresh_rate=2,
-    )
+    # TRAINING
+    if args.get("SHOULD_TRAIN"):
+        trainer = pl.Trainer(
+            gpus=args.get("GPUS"),
+            precision=args.get("PRECISION"),
+            log_gpu_memory=True,
+            max_epochs=args.get("MAX_EPOCHS"),
+            log_every_n_steps=args.get("LOG_STEPS"),
+            logger=tb_logger,
+            callbacks=callbacks,
+            benchmark=True,
+            gradient_clip_val=args.get("GRADIENT_CLIP"),
+            gradient_clip_algorithm='value',
+            stochastic_weight_avg=True,
+            progress_bar_refresh_rate=2,
+        )
 
-    # Training
-    start = datetime.now()
-    print('Training started at', start)
-    # torch.autograd.set_detect_anomaly(True)
-    trainer.fit(model=lightning_model.cuda(), datamodule=data)
-    print('Training duration:', datetime.now() - start)
+        start = datetime.now()
+        print('Training started at', start)
+        trainer.fit(model=lightning_model.cuda(), datamodule=data)
+        print('Training duration:', datetime.now() - start)
+
+    else:
+        print("Training skipped")
 
     # MEASURES
     metrics = [
@@ -188,6 +195,14 @@ def main(args):
 
 if __name__ == "__main__":
     args = {}
+
+    args["LOAD_FROM_CHECKPOINTS"] = config("LOAD_FROM_CHECKPOINTS",
+                                           default=False,
+                                           cast=bool)
+    args["CHECKPOINTS_PATH"] = config("CHECKPOINTS_PATH",
+                                      default=None,
+                                      cast=str)
+    args["SHOULD_TRAIN"] = config("SHOULD_TRAIN", default=True, cast=bool)
 
     args["CLASSES_NAME"] = config("CLASSES_NAME").split(", ")
 
