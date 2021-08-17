@@ -17,8 +17,6 @@ from c_unet.training.tverskyLosses import FocalTversky_loss
 from c_unet.training.lightningUnet import LightningUnet
 from c_unet.utils.plots.plot import plot_middle_slice
 
-# TODO : do not evaluate over test if there is no labels
-
 
 def main(args):
     # CONFIG
@@ -65,7 +63,7 @@ def main(args):
     # LIGHTNING
     loss = FocalTversky_loss({"apply_nonlin": None})
 
-    log_name = f"{args.get('LOG_NAME'), args.get('MODEL_DEPTH'), args.get('LEARNING_RATE'), args.get('GRADIENT_CLIP')}"
+    log_name = f"{args.get('LOG_NAME')}-{args.get('MODEL_DEPTH')}-{args.get('LEARNING_RATE')}-{args.get('GRADIENT_CLIP')}"
     tb_logger = pl_loggers.TensorBoardLogger(args.get("LOGS_DIR"),
                                              name=log_name,
                                              default_hp_metric=False)
@@ -151,7 +149,7 @@ def main(args):
                                                  dataloader_type=type_loader)
 
     # EVALUATING
-    Path(f"results/{args.get('LOG_NAME')}").mkdir(parents=True, exist_ok=True)
+    Path(f"results/{log_name}").mkdir(parents=True, exist_ok=True)
 
     for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
@@ -172,21 +170,20 @@ def main(args):
 
                     evaluator.evaluate(sub_prediction, sub_label, subject_id)
 
-                plot_middle_slice(
-                    subject,
-                    nb_of_classes=len(args.get("CLASSES_NAME")),
-                    cmap=args.get("CMAP"),
-                    save_name=f"results/{args.get('LOG_NAME')}/{subject_id}",
-                    with_labels=should_evaluate_and_plot_normaly)
+                plot_middle_slice(subject,
+                                  nb_of_classes=len(args.get("CLASSES_NAME")),
+                                  cmap=args.get("CMAP"),
+                                  save_name=f"results/{log_name}/{subject_id}",
+                                  classes_names=args.get("CLASSES_NAME"),
+                                  with_labels=should_evaluate_and_plot_normaly)
 
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
     writer.ConsoleStatisticsWriter(functions=functions).write(
         evaluator.results)
 
-    writer.CSVWriter(
-        f"results/{args.get('LOG_NAME')}/metrics_report.csv").write(
-            evaluator.results)
+    writer.CSVWriter(f"results/{log_name}/metrics_report.csv").write(
+        evaluator.results)
 
 
 if __name__ == "__main__":
