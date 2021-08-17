@@ -17,7 +17,7 @@ def plot_middle_slice(subject,
     if with_labels:
         # Image, all labels, all predictions, then 2 more columns per class
         fig_sag, axarr_sag = plt.subplots(nb_rows, 2, figsize=(10, 20))
-        fig_coro, axarr_coro = plt.subplots(nb_rows, 2, figsize=(10, 20))
+        fig_coro, axarr_coro = plt.subplots(nb_rows, 2, figsize=(10, 25))
     else:
         # No predictions printed in this case
         fig_sag, axarr_sag = plt.subplots(nb_rows, 1, figsize=(10, 20))
@@ -57,6 +57,7 @@ def plot_middle_slice(subject,
             axarr_sag[key, 1].imshow(items[1], cmap=cmap)
 
         axarr_sag[nb_rows - 1, 0].imshow(image_sag, cmap="gray")
+        axarr_sag[nb_rows - 1, 1].imshow(image_sag, cmap="gray")
 
     else:
         for key, items in to_print.items():
@@ -94,6 +95,7 @@ def plot_middle_slice(subject,
             axarr_coro[key, 1].imshow(items[1], cmap=cmap)
 
         axarr_coro[nb_rows - 1, 0].imshow(image_coro, cmap="gray")
+        axarr_coro[nb_rows - 1, 1].imshow(image_coro, cmap="gray")
 
     else:
         for key, items in to_print.items():
@@ -112,14 +114,14 @@ def plot_middle_slice(subject,
             ax.set_title(col)
 
         for ax, row in zip(axarr_sag[:, 0], rows):
-            ax.set_ylabel(row, rotation=0, size='large')
+            ax.set_ylabel(row, rotation=90, size='large')
         for ax, row in zip(axarr_coro[:, 0], rows):
-            ax.set_ylabel(row, rotation=0, size='large')
+            ax.set_ylabel(row, rotation=90, size='large')
     else:
         for ax, row in zip(axarr_sag, rows):
-            ax.set_ylabel(row, rotation=0, size='large')
+            ax.set_ylabel(row, rotation=90, size='large')
         for ax, row in zip(axarr_coro, rows):
-            ax.set_ylabel(row, rotation=0, size='large')
+            ax.set_ylabel(row, rotation=90, size='large')
 
     fig_sag.tight_layout()
     fig_coro.tight_layout()
