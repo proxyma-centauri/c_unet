@@ -17,10 +17,12 @@ from c_unet.architectures.unet import Unet
 from c_unet.training.tverskyLosses import FocalTversky_loss
 from c_unet.training.lightningUnet import LightningUnet
 from c_unet.utils.plots.plot import plot_middle_slice
+from c_unet.utils.logging.logging import configure_and_return_logger
 
 
-def main(args):
+def main(logger, args):
     # CONFIG
+    logger.info(f"CONFIGURATION \n\n {args}")
     print("\nYou are running with the following configuration:\n")
     print(args)
     print("\n --- \n")
@@ -34,6 +36,7 @@ def main(args):
 
     data.prepare_data()
     data.setup()
+    logger.info("Data set up\n")
 
     print('Training:  ', len(data.train_set))
     print('Validation: ', len(data.val_set))
@@ -80,6 +83,7 @@ def main(args):
     if args.get("LOAD_FROM_CHECKPOINTS"):
         path_checkpoint = os.path.abspath(args.get("CHECKPOINTS_PATH"))
         lightning_model = LightningUnet.load_from_checkpoint(path_checkpoint)
+        logger.info("Logged from CHECKPOINTS\n")
     else:
         lightning_model = LightningUnet(
             loss,
@@ -87,6 +91,7 @@ def main(args):
             model,
             learning_rate=args.get("LEARNING_RATE"),
             gradients_histograms=args.get("HISTOGRAMS"))
+        logger.info("Created new model\n")
 
     # TRAINING
     if args.get("SHOULD_TRAIN"):
@@ -107,8 +112,10 @@ def main(args):
 
         start = datetime.now()
         print('Training started at', start)
+        logger.info('Training started at', start)
         trainer.fit(model=lightning_model.cuda(), datamodule=data)
         print('Training duration:', datetime.now() - start)
+        logger.info('Training duration:', datetime.now() - start)
 
     else:
         print("Training skipped")
@@ -118,7 +125,6 @@ def main(args):
         metric.DiceCoefficient(),
         metric.HausdorffDistance(percentile=100),
         metric.VolumeSimilarity(),
-        # metric.MahalanobisDistance()
     ]
     labels = {i: name for i, name in enumerate(args.get("CLASSES_NAME"))}
 
@@ -157,11 +163,13 @@ def main(args):
                                                  list_of_predictions,
                                                  dataloader_type=type_loader)
 
+    logger.info("Finished PREDICTING\n")
     # EVALUATING
     Path(f"results/{log_name}").mkdir(parents=True, exist_ok=True)
 
     for type_predictions, list_of_batch in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
+        logger.info(f" --- EVALUATING {type_predictions} --- ")
 
         # Making sure that we only try to evaluate on test when there are test labels
         should_evaluate_and_plot_normaly = (type_predictions != "test") or (
@@ -186,6 +194,7 @@ def main(args):
                                   classes_names=args.get("CLASSES_NAME"),
                                   with_labels=should_evaluate_and_plot_normaly)
 
+    logger.info("Finished EVALUATING\n")
     # SAVING METRICS
     functions = {'MEAN': np.mean, 'STD': np.std}
     writer.ConsoleStatisticsWriter(functions=functions).write(
@@ -193,9 +202,18 @@ def main(args):
 
     writer.CSVWriter(f"results/{log_name}/metrics_report.csv").write(
         evaluator.results)
+    writer.CSVStatisticsWriter(
+        f"results/{log_name}/metrics_report_summary.csv",
+        functions=functions).write(evaluator.results)
+    logger.info("Saved metrics to files")
 
 
 if __name__ == "__main__":
+    # LOGGER
+    logger = configure_and_return_logger(
+        'c_unet/utils/logging/loggingConfig.yml')
+
+    # ARGS
     args = {}
 
     args["LOAD_FROM_CHECKPOINTS"] = config("LOAD_FROM_CHECKPOINTS",
@@ -243,4 +261,4 @@ if __name__ == "__main__":
     args["GRADIENT_CLIP"] = config("GRADIENT_CLIP", default=0.5, cast=float)
     args["CMAP"] = config("CMAP", default="Oranges")
 
-    main(args)
+    main(logger, args)
