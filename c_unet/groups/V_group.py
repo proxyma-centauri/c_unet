@@ -74,9 +74,9 @@ class V_group(object):
         """Permute the outputs of the group convolution
         
         Args:
-            W: [group_dim, n_channels_in, group_dim, n_channels_out, h, w, d]
+            W: [group_dim, n_channels_out, group_dim, n_channels_in, h, w, d]
         Returns:
-            list of 4 permutations of W [[group_dim, n_channels_in, group_dim, n_channels_out, h, w, d],....]
+            list of 4 permutations of W [[group_dim, n_channels_out, group_dim, n_channels_in, h, w, d],....]
         """
         Wsh = W.shape
         cayley = self.cayleytable
@@ -85,9 +85,11 @@ class V_group(object):
         for i in range(4):
             perm_mat = self.get_permutation_matrix(cayley, i).to(W.device)
             w = W[i, :, :, :, :, :, :]
+            # w = w.permute([1, 0, 2, 3, 4, 5])
             w = w.reshape([-1, 4])
             w = torch.matmul(w, perm_mat)
             w = w.view([-1] + list(Wsh[2:]))
+            # w = w.permute([1, 0, 2, 3, 4, 5])
             U.append(w)
         return U
 
