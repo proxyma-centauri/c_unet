@@ -58,7 +58,7 @@ loggers:
   <module>:
     level: DEBUG
     handlers: [info_file_handler, error_file_handler, critical_file_handler, debug_file_handler, warn_file_handler]
-    propogate: no
+    propagate: no
 
 root:
   level: DEBUG

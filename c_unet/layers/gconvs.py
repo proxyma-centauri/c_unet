@@ -90,8 +90,8 @@ class Gconv3d(nn.Module):
             WN = WN.view(self.out_channels * self.group_dim, self.in_channels,
                          self.kernel_size, self.kernel_size, self.kernel_size)
         else:
-            WN = WN.view(self.group_dim, self.in_channels, self.group_dim,
-                         self.out_channels, self.kernel_size, self.kernel_size,
+            WN = WN.view(self.group_dim, self.out_channels, self.group_dim,
+                         self.in_channels, self.kernel_size, self.kernel_size,
                          self.kernel_size)
 
             WN_shifted = self.group.G_permutation(WN)

@@ -112,10 +112,10 @@ def main(logger, args):
 
         start = datetime.now()
         print('Training started at', start)
-        logger.info('Training started at', start)
+        logger.info(f"Training started at {start}")
         trainer.fit(model=lightning_model.cuda(), datamodule=data)
         print('Training duration:', datetime.now() - start)
-        logger.info('Training duration:', datetime.now() - start)
+        logger.info(f"Training duration: {datetime.now() - start}")
 
     else:
         print("Training skipped")
