@@ -50,6 +50,7 @@ def main(logger, args):
                      args.get("OUT_CHANNELS"),
                      final_activation=args.get("FINAL_ACTIVATION"),
                      nonlinearity=args.get("NONLIN"),
+                     normalization=args.get("NORMALIZATION"),
                      divider=args.get("DIVIDER"),
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
@@ -60,6 +61,7 @@ def main(logger, args):
                      args.get("OUT_CHANNELS"),
                      final_activation=args.get("FINAL_ACTIVATION"),
                      nonlinearity=args.get("NONLIN"),
+                     normalization=args.get("NORMALIZATION"),
                      divider=args.get("DIVIDER"),
                      model_depth=args.get("MODEL_DEPTH"),
                      dropout=args.get("DROPOUT"))
@@ -240,6 +242,7 @@ if __name__ == "__main__":
     args["OUT_CHANNELS"] = config("OUT_CHANNELS", cast=int)
     args["FINAL_ACTIVATION"] = config("FINAL_ACTIVATION", default="softmax")
     args["NONLIN"] = config("NONLIN", default="elu")
+    args["NORMALIZATION"] = config("NORMALIZATION", default="bn")
     args["DIVIDER"] = config("DIVIDER", cast=int)
     args["MODEL_DEPTH"] = config("MODEL_DEPTH", cast=int)
     args["DROPOUT"] = config("DROPOUT", cast=float)
