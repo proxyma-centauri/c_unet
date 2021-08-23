@@ -241,7 +241,7 @@ if __name__ == "__main__":
     args["IN_CHANNELS"] = 1
     args["OUT_CHANNELS"] = config("OUT_CHANNELS", cast=int)
     args["FINAL_ACTIVATION"] = config("FINAL_ACTIVATION", default="softmax")
-    args["NONLIN"] = config("NONLIN", default="elu")
+    args["NONLIN"] = config("NONLIN", default="leaky-relu")
     args["NORMALIZATION"] = config("NORMALIZATION", default="bn")
     args["DIVIDER"] = config("DIVIDER", cast=int)
     args["MODEL_DEPTH"] = config("MODEL_DEPTH", cast=int)
