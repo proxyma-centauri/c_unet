@@ -85,11 +85,9 @@ class V_group(object):
         for i in range(4):
             perm_mat = self.get_permutation_matrix(cayley, i).to(W.device)
             w = W[i, :, :, :, :, :, :]
-            w = w.permute([0, 5, 2, 3, 4, 1])
             w = w.reshape([-1, 4])
             w = torch.matmul(w, perm_mat)
             w = w.view([-1] + list(Wsh[2:]))
-            w = w.permute([0, 5, 2, 3, 4, 1])
             U.append(w)
         return U
 
