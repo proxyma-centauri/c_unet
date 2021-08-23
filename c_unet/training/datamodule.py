@@ -5,6 +5,8 @@ import numpy as np
 from torch.utils.data import random_split, DataLoader
 from pathlib import Path
 
+from c_unet.training.HomogeniseLaterality import HomogeniseLaterality
+
 
 class DataModule(pl.LightningDataModule):
     """
@@ -49,7 +51,7 @@ class DataModule(pl.LightningDataModule):
 
     def download_data(self):
         def get_niis(d):
-            return sorted(p for p in d.glob(f'*{self.subset_name}.nii*')
+            return sorted(p for p in d.glob(f'*{self.subset_name}*.nii*')
                           if not p.name.startswith('.'))
 
         image_training_paths = get_niis(self.dataset_dir / 'imagesTr')
@@ -70,9 +72,11 @@ class DataModule(pl.LightningDataModule):
 
         for image_path, label_path in zip(image_training_paths,
                                           label_training_paths):
-            subject = tio.Subject(image=tio.ScalarImage(
-                image_path, filename=f"{image_path}".split('/')[-1]),
-                                  label=tio.LabelMap(label_path))
+            subject = tio.Subject(
+                image=tio.ScalarImage(image_path,
+                                      filename=f"{image_path}".split('/')[-1]),
+                label=tio.LabelMap(label_path),
+                laterality="left" if "left" in str(image_path) else "right")
 
             self.subjects.append(subject)
 
@@ -81,18 +85,25 @@ class DataModule(pl.LightningDataModule):
                                               label_test_paths):
                 subject = tio.Subject(image=tio.ScalarImage(
                     image_path, filename=f"{image_path}".split('/')[-1]),
-                                      label=tio.LabelMap(label_path))
+                                      label=tio.LabelMap(label_path),
+                                      laterality="left" if "left"
+                                      in str(image_path) else "right")
 
                 self.test_subjects.append(subject)
         else:
             for image_path in image_test_paths:
                 subject = tio.Subject(image=tio.ScalarImage(
-                    image_path, filename=f"{image_path}".split('/')[-1]))
+                    image_path, filename=f"{image_path}".split('/')[-1]),
+                                      laterality="left" if "left"
+                                      in str(image_path) else "right")
 
                 self.test_subjects.append(subject)
 
     def get_preprocessing_transform(self):
         preprocess = tio.Compose([
+            HomogeniseLaterality(from_laterality='left',
+                                 axes='L',
+                                 include=["image", "label"]),
             tio.ZNormalization(),
             tio.CropOrPad(self.get_max_shape(self.subjects +
                                              self.test_subjects),
