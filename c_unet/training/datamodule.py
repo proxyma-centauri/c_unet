@@ -51,9 +51,9 @@ class DataModule(pl.LightningDataModule):
 
     def download_data(self):
         def get_niis(d):
-            file_name = f'*{self.subset_name}*.nii*'
+            file_name = f'*.nii*'
             if self.subset_name:
-                file_name = f'*.nii*'
+                file_name = f'*{self.subset_name}*.nii*'
             return sorted(p for p in d.glob(file_name)
                           if not p.name.startswith('.'))
 
