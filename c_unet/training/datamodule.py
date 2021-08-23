@@ -51,7 +51,10 @@ class DataModule(pl.LightningDataModule):
 
     def download_data(self):
         def get_niis(d):
-            return sorted(p for p in d.glob(f'*{self.subset_name}*.nii*')
+            file_name = f'*{self.subset_name}*.nii*'
+            if self.subset_name:
+                file_name = f'*.nii*'
+            return sorted(p for p in d.glob(file_name)
                           if not p.name.startswith('.'))
 
         image_training_paths = get_niis(self.dataset_dir / 'imagesTr')
