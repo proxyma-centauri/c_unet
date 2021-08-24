@@ -2,6 +2,7 @@ import torchio as tio
 import pytorch_lightning as pl
 import numpy as np
 
+from torch import Generator as Generator
 from torch.utils.data import random_split, DataLoader
 from pathlib import Path
 
@@ -27,7 +28,8 @@ class DataModule(pl.LightningDataModule):
                  batch_size: int = 16,
                  num_workers: int = 0,
                  train_val_ratio: float = 0.7,
-                 test_has_labels: bool = False):
+                 test_has_labels: bool = False,
+                 seed: int = 1):
         super().__init__()
         self.task = task
         self.subset_name = subset_name
@@ -36,6 +38,7 @@ class DataModule(pl.LightningDataModule):
         self.dataset_dir = Path(task)
         self.train_val_ratio = train_val_ratio
         self.test_has_labels = test_has_labels
+        self.seed = seed
         self.subjects = None
         self.test_subjects = None
         self.preprocess = None
@@ -131,7 +134,10 @@ class DataModule(pl.LightningDataModule):
         num_train_subjects = int(round(num_subjects * self.train_val_ratio))
         num_val_subjects = num_subjects - num_train_subjects
         splits = num_train_subjects, num_val_subjects
-        train_subjects, val_subjects = random_split(self.subjects, splits)
+        train_subjects, val_subjects = random_split(
+            self.subjects,
+            splits,
+            generator=Generator().manual_seed(self.seed))
 
         self.preprocess = self.get_preprocessing_transform()
         augment = self.get_augmentation_transform()

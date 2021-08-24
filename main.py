@@ -32,7 +32,8 @@ def main(logger, args):
                       subset_name=args.get("SUBSET_NAME"),
                       batch_size=args.get("BATCH_SIZE"),
                       num_workers=args.get("NUM_WORKERS"),
-                      test_has_labels=args.get("TEST_HAS_LABELS"))
+                      test_has_labels=args.get("TEST_HAS_LABELS"),
+                      seed=args.get("SEED"))
 
     data.prepare_data()
     data.setup()
@@ -235,6 +236,7 @@ if __name__ == "__main__":
     args["TEST_HAS_LABELS"] = config("TEST_HAS_LABELS",
                                      default=False,
                                      cast=bool)
+    args["SEED"] = config("SEED", default=1, cast=int)
 
     args["GROUP"] = config("GROUP", default=None)
     args["GROUP_DIM"] = config("GROUP_DIM", cast=int)
