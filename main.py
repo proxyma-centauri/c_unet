@@ -4,6 +4,7 @@ import torch
 import torchio as tio
 import pytorch_lightning as pl
 import numpy as np
+import nibabel as nib
 import pymia.evaluation.evaluator as eval_
 import pymia.evaluation.metric as metric
 import pymia.evaluation.writer as writer
@@ -153,9 +154,9 @@ def main(logger, args):
 
     list_of_predictions = {"train": [], "val": [], "test": []}
     dataloaders = {
-        "train": data.train_dataloader(),
+        #"train": data.train_dataloader(),
         "test": data.test_dataloader(),
-        "val": data.val_dataloader()
+        #"val": data.val_dataloader()
     }
 
     with torch.no_grad():
@@ -182,6 +183,18 @@ def main(logger, args):
             for subject, filename in zip(batch, filenames):
                 subject_id = f"{type_predictions}-{filename}"
 
+                # SAVING THE SEGMENTATION
+                affine = subject['image'][tio.AFFINE]
+                print(f'affine {affine}')
+
+                inverted_prediction = subject.apply_inverse_transform(
+                )['prediction'][tio.DATA].argmax(dim=0).numpy()
+                saved_prediction = nib.Nifti1Image(inverted_prediction,
+                                                   affine=affine)
+                nib.save(saved_prediction,
+                         f"results/{log_name}/{subject_id}.nii.gz")
+
+                # EVALUATION
                 if should_evaluate_and_plot_normaly:
                     sub_label = subject['label'][tio.DATA].argmax(
                         dim=0).numpy()
@@ -190,6 +203,7 @@ def main(logger, args):
 
                     evaluator.evaluate(sub_prediction, sub_label, subject_id)
 
+                # EXAMPLE SLICE PLOTTING
                 plot_middle_slice(subject,
                                   nb_of_classes=len(args.get("CLASSES_NAME")),
                                   cmap=args.get("CMAP"),
