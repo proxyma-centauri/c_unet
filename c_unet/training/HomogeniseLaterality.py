@@ -2,8 +2,8 @@ import torchio as tio
 
 
 class HomogeniseLaterality(tio.SpatialTransform):
-    def __init__(self, include, from_laterality, axes):
-        super().__init__(include=include)
+    def __init__(self, from_laterality="left", axes="L", **kwargs):
+        super().__init__(**kwargs)
         self.from_laterality = from_laterality
         self.axes = axes
 
