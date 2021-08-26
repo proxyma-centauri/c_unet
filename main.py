@@ -99,7 +99,7 @@ def main(logger, args):
         logger.info("Created new model\n")
 
     # SUMMARY OF MODEL
-    lightning_model.summarize()
+    print(lightning_model.summarize())
 
     # TRAINING
     if args.get("SHOULD_TRAIN"):
