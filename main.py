@@ -184,15 +184,22 @@ def main(logger, args):
                 subject_id = f"{type_predictions}-{filename}"
 
                 # SAVING THE SEGMENTATION
+                folder_name = 'imagesTs' if type_predictions == "test" else "imagesTr"
+
+                header = nib.load(
+                    f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}'
+                ).header
+
+                print(f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}')
                 affine = subject['image'][tio.AFFINE]
-                print(f'affine {affine}')
 
                 inverted_prediction = subject.apply_inverse_transform(
-                )['prediction'][tio.DATA].argmax(dim=0).numpy()
-                saved_prediction = nib.Nifti1Image(inverted_prediction,
-                                                   affine=affine)
-                nib.save(saved_prediction,
-                         f"results/{log_name}/{subject_id}.nii.gz")
+                )['prediction'][tio.DATA].argmax(dim=0)
+
+                saved_prediction = nib.Nifti1Image(inverted_prediction.numpy(),
+                                                   affine=affine,
+                                                   header=header)
+                nib.save(saved_prediction, f"results/{log_name}/{subject_id}")
 
                 # EVALUATION
                 if should_evaluate_and_plot_normaly:
