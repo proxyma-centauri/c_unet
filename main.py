@@ -43,6 +43,7 @@ def main(logger, args):
     print('Training:  ', len(data.train_set))
     print('Validation: ', len(data.val_set))
     print('Test:      ', len(data.test_set))
+    print("\n --- \n")
 
     # MODEL
     if args.get("GROUP") is not None:
@@ -96,6 +97,9 @@ def main(logger, args):
             learning_rate=args.get("LEARNING_RATE"),
             gradients_histograms=args.get("HISTOGRAMS"))
         logger.info("Created new model\n")
+
+    # SUMMARY OF MODEL
+    lightning_model.summarize()
 
     # TRAINING
     if args.get("SHOULD_TRAIN"):
