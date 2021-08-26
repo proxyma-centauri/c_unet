@@ -145,7 +145,7 @@ def main(logger, args):
                                           list_of_predictions,
                                           dataloader_type="train"):
         input = subject['image'][tio.DATA].to(lightning_model.device)
-        filename = subject['image']['filename']
+        filename = subject['label']['filename']
 
         # Make sure there is a channel and a group dimension when needed
         input = input.unsqueeze(0)
@@ -191,7 +191,7 @@ def main(logger, args):
             subject_id = f"{type_predictions}-{filename}"
 
             # SAVING THE SEGMENTATION
-            folder_name = 'imagesTs' if type_predictions == "test" else "imagesTr"
+            folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
 
             header = nib.load(
                 f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}').header
