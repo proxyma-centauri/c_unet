@@ -119,14 +119,14 @@ def main(logger, args):
         )
 
         start = datetime.now()
-        print('Training started at', start)
+        print('\nTraining started at', start)
         logger.info(f"Training started at {start}")
         trainer.fit(model=lightning_model.cuda(), datamodule=data)
-        print('Training duration:', datetime.now() - start)
+        print('\nTraining duration:', datetime.now() - start)
         logger.info(f"Training duration: {datetime.now() - start}")
 
     else:
-        print("Training skipped")
+        print("\nTraining skipped")
 
     # MEASURES
     metrics = [
@@ -147,6 +147,8 @@ def main(logger, args):
         input = subject['image'][tio.DATA].to(lightning_model.device)
         filename = subject['image']['filename']
 
+        # Make sure there is a channel and a group dimension when needed
+        input = input.unsqueeze(0)
         if args.get("GROUP"):
             input = input.unsqueeze(1)
 
@@ -166,11 +168,9 @@ def main(logger, args):
         for type_loader, subjects_dataset in datasets.items():
             print(f" --- PREDICTING {type_loader} --- ")
             for subject in subjects_dataset:
-                print(subject.applied_transforms)
                 make_predictions_over_subject_set(subject,
                                                   list_of_predictions,
                                                   dataloader_type=type_loader)
-                print(subject.applied_transforms)
 
     logger.info("Finished PREDICTING\n")
     # EVALUATING
@@ -194,13 +194,10 @@ def main(logger, args):
             header = nib.load(
                 f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}').header
 
-            print("\n --- \n")
-            print(subject['image'].shape)
-            print(subject['label'].shape)
             inverted_subject = subject.apply_inverse_transform()
-            print(inverted_subject['image'].shape)
-            print(inverted_subject['label'].shape)
-            print("\n --- \n")
+            print("---")
+            print(inverted_subject['prediction'])
+            print("---")
 
             prediction_to_save = inverted_subject['prediction'][
                 tio.DATA].argmax(dim=0)
