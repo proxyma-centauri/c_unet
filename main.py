@@ -153,8 +153,9 @@ def main(logger, args):
             input = input.unsqueeze(1)
 
         prediction_for_subject = lightning_model.unet(input)
-        subject.add_image(tio.LabelMap(tensor=prediction_for_subject),
-                          'prediction')
+        subject.add_image(
+            tio.LabelMap(tensor=prediction_for_subject[0, :, :, :, :]),
+            'prediction')
 
         list_of_predictions[dataloader_type].append((subject, filename))
 
@@ -198,6 +199,8 @@ def main(logger, args):
             inverted_subject = subject.apply_inverse_transform()
             prediction_to_save = inverted_subject['prediction'][
                 tio.DATA].argmax(dim=0)
+            print(prediction_to_save.shape)
+            print(prediction_to_save.unique())
 
             affine = inverted_subject['image'][tio.AFFINE]
 
