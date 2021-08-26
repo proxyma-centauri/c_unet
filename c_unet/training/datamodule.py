@@ -110,12 +110,16 @@ class DataModule(pl.LightningDataModule):
             HomogeniseLaterality(from_laterality='left',
                                  axes='L',
                                  include=["image", "label"]),
-            tio.ZNormalization(),
+            tio.ZNormalization(include=["image", "label"]),
             tio.CropOrPad(self.get_max_shape(self.subjects +
                                              self.test_subjects),
-                          mask_name="label"),
-            tio.EnsureShapeMultiple(8, method='pad'),  # for the U-Net
-            tio.OneHot(),
+                          mask_name="label",
+                          include=["image", "label"]),
+            tio.EnsureShapeMultiple(8,
+                                    method='pad',
+                                    include=["image",
+                                             "label"]),  # for the U-Net
+            tio.OneHot(include=["label"]),
         ])
         return preprocess
 
