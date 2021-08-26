@@ -194,13 +194,21 @@ def main(logger, args):
                     f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}'
                 ).header
 
-                print(f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}')
-                affine = subject['image'][tio.AFFINE]
+                print("\n --- \n")
+                print(subject['image'].shape)
+                print(subject['label'].shape)
+                inverted_subject = subject.apply_inverse_transform()
+                print(inverted_subject['image'].shape)
+                print(inverted_subject['label'].shape)
+                print("\n --- \n")
 
-                inverted_prediction = subject.apply_inverse_transform(
-                )['prediction'][tio.DATA].argmax(dim=0)
+                prediction_to_save = inverted_subject['prediction'][
+                    tio.DATA].argmax(dim=0)
 
-                saved_prediction = nib.Nifti1Image(inverted_prediction.numpy(),
+                affine = inverted_subject['image'][tio.AFFINE]
+                print(affine)
+
+                saved_prediction = nib.Nifti1Image(prediction_to_save.numpy(),
                                                    affine=affine,
                                                    header=header)
                 nib.save(saved_prediction, f"results/{log_name}/{subject_id}")
