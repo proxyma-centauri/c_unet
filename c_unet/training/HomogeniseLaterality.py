@@ -1,24 +1,17 @@
 import torchio as tio
 
 
-class HomogeniseLaterality(tio.SpatialTransform):
+class HomogeniseLaterality(tio.Flip):
     def __init__(self, from_laterality="left", axes="L", **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(axes=axes, **kwargs)
         self.from_laterality = from_laterality
-        self.axes = axes
 
     def apply_transform(self, subject):
         transformed = subject
         if subject["laterality"] == self.from_laterality:
-            transform = tio.Flip(**self.add_include_exclude(
-                {"axes": _ensure_axes_indices(subject, self.axes)}))
-            transformed = transform(subject)
+            self.axes = _ensure_axes_indices(subject, self.axes)
+            transformed = tio.Flip.apply_transform(self, subject)
         return transformed
-
-    def add_include_exclude(self, kwargs):
-        kwargs['include'] = self.include
-        kwargs['exclude'] = self.exclude
-        return kwargs
 
     @staticmethod
     def is_invertible():

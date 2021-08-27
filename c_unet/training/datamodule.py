@@ -110,19 +110,20 @@ class DataModule(pl.LightningDataModule):
 
     def get_preprocessing_transform(self):
         preprocess = tio.Compose([
-            HomogeniseLaterality(from_laterality='left',
-                                 axes='L',
-                                 include=["image", "label"]),
-            tio.ZNormalization(include=["image", "label"]),
-            tio.CropOrPad(self.get_max_shape(self.subjects +
-                                             self.test_subjects),
-                          mask_name="label",
-                          include=["image", "label"]),
-            tio.EnsureShapeMultiple(8,
-                                    method='pad',
-                                    include=["image",
-                                             "label"]),  # for the U-Net
-            tio.OneHot(include=["label"]),
+            HomogeniseLaterality(
+                from_laterality='left',
+                axes='L',
+            ),
+            tio.ZNormalization(),
+            tio.CropOrPad(
+                self.get_max_shape(self.subjects + self.test_subjects) + 1,
+                mask_name="label",
+            ),
+            tio.EnsureShapeMultiple(
+                8,
+                method='pad',
+            ),
+            tio.OneHot(),
         ])
         return preprocess
 
