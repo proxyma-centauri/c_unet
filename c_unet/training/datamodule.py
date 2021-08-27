@@ -81,7 +81,8 @@ class DataModule(pl.LightningDataModule):
             subject = tio.Subject(
                 image=tio.ScalarImage(image_path,
                                       filename=f"{image_path}".split('/')[-1]),
-                label=tio.LabelMap(label_path),
+                label=tio.LabelMap(label_path,
+                                   ilename=f"{label_path}".split('/')[-1]),
                 laterality="left" if "left" in str(image_path) else "right")
 
             self.subjects.append(subject)
@@ -89,11 +90,13 @@ class DataModule(pl.LightningDataModule):
         if self.test_has_labels:
             for image_path, label_path in zip(image_test_paths,
                                               label_test_paths):
-                subject = tio.Subject(image=tio.ScalarImage(
-                    image_path, filename=f"{image_path}".split('/')[-1]),
-                                      label=tio.LabelMap(label_path),
-                                      laterality="left" if "left"
-                                      in str(image_path) else "right")
+                subject = tio.Subject(
+                    image=tio.ScalarImage(
+                        image_path, filename=f"{image_path}".split('/')[-1]),
+                    label=tio.LabelMap(
+                        label_path, filename=f"{label_path}".split('/')[-1]),
+                    laterality="left"
+                    if "left" in str(image_path) else "right")
 
                 self.test_subjects.append(subject)
         else:
@@ -110,12 +113,16 @@ class DataModule(pl.LightningDataModule):
             HomogeniseLaterality(from_laterality='left',
                                  axes='L',
                                  include=["image", "label"]),
-            tio.ZNormalization(),
+            tio.ZNormalization(include=["image", "label"]),
             tio.CropOrPad(self.get_max_shape(self.subjects +
                                              self.test_subjects),
-                          mask_name="label"),
-            tio.EnsureShapeMultiple(8, method='pad'),  # for the U-Net
-            tio.OneHot(),
+                          mask_name="label",
+                          include=["image", "label"]),
+            tio.EnsureShapeMultiple(8,
+                                    method='pad',
+                                    include=["image",
+                                             "label"]),  # for the U-Net
+            tio.OneHot(include=["label"]),
         ])
         return preprocess
 

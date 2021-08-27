@@ -4,6 +4,7 @@ import torch
 import torchio as tio
 import pytorch_lightning as pl
 import numpy as np
+import nibabel as nib
 import pymia.evaluation.evaluator as eval_
 import pymia.evaluation.metric as metric
 import pymia.evaluation.writer as writer
@@ -42,6 +43,7 @@ def main(logger, args):
     print('Training:  ', len(data.train_set))
     print('Validation: ', len(data.val_set))
     print('Test:      ', len(data.test_set))
+    print("\n --- \n")
 
     # MODEL
     if args.get("GROUP") is not None:
@@ -96,6 +98,9 @@ def main(logger, args):
             gradients_histograms=args.get("HISTOGRAMS"))
         logger.info("Created new model\n")
 
+    # SUMMARY OF MODEL
+    print(lightning_model.summarize())
+
     # TRAINING
     if args.get("SHOULD_TRAIN"):
         trainer = pl.Trainer(
@@ -114,14 +119,14 @@ def main(logger, args):
         )
 
         start = datetime.now()
-        print('Training started at', start)
+        print('\nTraining started at', start)
         logger.info(f"Training started at {start}")
         trainer.fit(model=lightning_model.cuda(), datamodule=data)
-        print('Training duration:', datetime.now() - start)
+        print('\nTraining duration:', datetime.now() - start)
         logger.info(f"Training duration: {datetime.now() - start}")
 
     else:
-        print("Training skipped")
+        print("\nTraining skipped")
 
     # MEASURES
     metrics = [
@@ -134,43 +139,45 @@ def main(logger, args):
     evaluator = eval_.SegmentationEvaluator(metrics, labels)
 
     # PREDICTIONS
-    def make_predictions_over_dataloader(batch,
-                                         list_of_predictions,
-                                         dataloader_type="train"):
-        inputs = batch['image'][tio.DATA].to(lightning_model.device)
-        filenames = batch['image']['filename']
+    lightning_model.eval()
 
+    def make_predictions_over_subject_set(subject,
+                                          list_of_predictions,
+                                          dataloader_type="train"):
+        input = subject['image'][tio.DATA].to(lightning_model.device)
+
+        # Make sure there is a channel and a group dimension when needed
+        input = input.unsqueeze(0)
         if args.get("GROUP"):
-            inputs = inputs.unsqueeze(1)
+            input = input.unsqueeze(1)
 
-        predictions = lightning_model.unet(inputs)
+        prediction_for_subject = lightning_model.unet(input)
+        subject.add_image(
+            tio.LabelMap(tensor=prediction_for_subject[0, :, :, :, :]),
+            'prediction')
 
-        batch_subjects = tio.utils.get_subjects_from_batch(batch)
-        tio.utils.add_images_from_batch(batch_subjects, predictions,
-                                        tio.LabelMap)
-        list_of_predictions[dataloader_type].append(
-            (batch_subjects, filenames))
+        list_of_predictions[dataloader_type].append(subject)
 
     list_of_predictions = {"train": [], "val": [], "test": []}
-    dataloaders = {
-        "train": data.train_dataloader(),
-        "test": data.test_dataloader(),
-        "val": data.val_dataloader()
+    datasets = {
+        "train": data.train_set,
+        "test": data.test_set,
+        "val": data.val_set
     }
 
     with torch.no_grad():
-        for type_loader, dataloader in dataloaders.items():
+        for type_loader, subjects_dataset in datasets.items():
             print(f" --- PREDICTING {type_loader} --- ")
-            for batch in dataloader:
-                make_predictions_over_dataloader(batch,
-                                                 list_of_predictions,
-                                                 dataloader_type=type_loader)
+            for subject in subjects_dataset:
+                make_predictions_over_subject_set(subject,
+                                                  list_of_predictions,
+                                                  dataloader_type=type_loader)
 
     logger.info("Finished PREDICTING\n")
     # EVALUATING
     Path(f"results/{log_name}").mkdir(parents=True, exist_ok=True)
 
-    for type_predictions, list_of_batch in list_of_predictions.items():
+    for type_predictions, list_of_subjects in list_of_predictions.items():
         print(f" --- EVALUATING {type_predictions} --- ")
         logger.info(f" --- EVALUATING {type_predictions} --- ")
 
@@ -178,24 +185,44 @@ def main(logger, args):
         should_evaluate_and_plot_normaly = (type_predictions != "test") or (
             args.get("TEST_HAS_LABELS"))
 
-        for (batch, filenames) in list_of_batch:
-            for subject, filename in zip(batch, filenames):
-                subject_id = f"{type_predictions}-{filename}"
+        for subject in list_of_subjects:
+            # Path variables
+            field = 'label' if should_evaluate_and_plot_normaly else 'image'
+            filename = subject[field]['filename']
+            folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
+            subject_id = f"{type_predictions}-{filename}"
 
-                if should_evaluate_and_plot_normaly:
-                    sub_label = subject['label'][tio.DATA].argmax(
-                        dim=0).numpy()
-                    sub_prediction = subject['prediction'][tio.DATA].argmax(
-                        dim=0).numpy()
+            # SAVING THE SEGMENTATION
 
-                    evaluator.evaluate(sub_prediction, sub_label, subject_id)
+            header = nib.load(
+                f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}').header
 
-                plot_middle_slice(subject,
-                                  nb_of_classes=len(args.get("CLASSES_NAME")),
-                                  cmap=args.get("CMAP"),
-                                  save_name=f"results/{log_name}/{subject_id}",
-                                  classes_names=args.get("CLASSES_NAME"),
-                                  with_labels=should_evaluate_and_plot_normaly)
+            inverted_subject = subject.apply_inverse_transform()
+            prediction_to_save = inverted_subject['prediction'][
+                tio.DATA].argmax(dim=0)
+
+            affine = inverted_subject['image'][tio.AFFINE]
+
+            saved_prediction = nib.Nifti1Image(prediction_to_save.numpy(),
+                                               affine=affine,
+                                               header=header)
+            nib.save(saved_prediction, f"results/{log_name}/{subject_id}")
+
+            # EVALUATION
+            if should_evaluate_and_plot_normaly:
+                sub_label = subject['label'][tio.DATA].argmax(dim=0).numpy()
+                sub_prediction = subject['prediction'][tio.DATA].argmax(
+                    dim=0).numpy()
+
+                evaluator.evaluate(sub_prediction, sub_label, subject_id)
+
+            # EXAMPLE SLICE PLOTTING
+            plot_middle_slice(subject,
+                              nb_of_classes=len(args.get("CLASSES_NAME")),
+                              cmap=args.get("CMAP"),
+                              save_name=f"results/{log_name}/{subject_id}",
+                              classes_names=args.get("CLASSES_NAME"),
+                              with_labels=should_evaluate_and_plot_normaly)
 
     logger.info("Finished EVALUATING\n")
     # SAVING METRICS
