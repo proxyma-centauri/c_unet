@@ -82,7 +82,7 @@ class DataModule(pl.LightningDataModule):
                 image=tio.ScalarImage(image_path,
                                       filename=f"{image_path}".split('/')[-1]),
                 label=tio.LabelMap(label_path,
-                                   ilename=f"{label_path}".split('/')[-1]),
+                                   filename=f"{label_path}".split('/')[-1]),
                 laterality="left" if "left" in str(image_path) else "right")
 
             self.subjects.append(subject)
