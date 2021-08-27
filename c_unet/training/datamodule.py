@@ -120,8 +120,7 @@ class DataModule(pl.LightningDataModule):
                           include=["image", "label"]),
             tio.EnsureShapeMultiple(8,
                                     method='pad',
-                                    include=["image",
-                                             "label"]),  # for the U-Net
+                                    include=["image", "label"]),
             tio.OneHot(include=["label"]),
         ])
         return preprocess
