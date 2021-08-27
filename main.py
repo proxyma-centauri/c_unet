@@ -145,7 +145,6 @@ def main(logger, args):
                                           list_of_predictions,
                                           dataloader_type="train"):
         input = subject['image'][tio.DATA].to(lightning_model.device)
-        filename = subject['label']['filename']
 
         # Make sure there is a channel and a group dimension when needed
         input = input.unsqueeze(0)
@@ -157,7 +156,7 @@ def main(logger, args):
             tio.LabelMap(tensor=prediction_for_subject[0, :, :, :, :]),
             'prediction')
 
-        list_of_predictions[dataloader_type].append((subject, filename))
+        list_of_predictions[dataloader_type].append(subject)
 
     list_of_predictions = {"train": [], "val": [], "test": []}
     datasets = {
@@ -186,12 +185,14 @@ def main(logger, args):
         should_evaluate_and_plot_normaly = (type_predictions != "test") or (
             args.get("TEST_HAS_LABELS"))
 
-        for (subject, filename) in list_of_subjects:
-            # for subject, filename in zip(subjects_data, filenames):
+        for subject in list_of_subjects:
+            # Path variables
+            filename = subject['label' if should_evaluate_and_plot_normaly else
+                               'image']['filename']
+            folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
             subject_id = f"{type_predictions}-{filename}"
 
             # SAVING THE SEGMENTATION
-            folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
 
             header = nib.load(
                 f'{args.get("PATH_TO_DATA")}/{folder_name}/{filename}').header
@@ -199,8 +200,6 @@ def main(logger, args):
             inverted_subject = subject.apply_inverse_transform()
             prediction_to_save = inverted_subject['prediction'][
                 tio.DATA].argmax(dim=0)
-            print(prediction_to_save.shape)
-            print(prediction_to_save.unique())
 
             affine = inverted_subject['image'][tio.AFFINE]
 
