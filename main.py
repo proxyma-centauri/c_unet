@@ -160,9 +160,9 @@ def main(logger, args):
 
     list_of_predictions = {"train": [], "val": [], "test": []}
     datasets = {
-        #"train": data.train_set,
+        "train": data.train_set,
         "test": data.test_set,
-        #"val": data.val_set
+        "val": data.val_set
     }
 
     with torch.no_grad():
@@ -187,8 +187,8 @@ def main(logger, args):
 
         for subject in list_of_subjects:
             # Path variables
-            filename = subject['label' if should_evaluate_and_plot_normaly else
-                               'image']['filename']
+            field = 'label' if should_evaluate_and_plot_normaly else 'image'
+            filename = subject[field]['filename']
             folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
             subject_id = f"{type_predictions}-{filename}"
 
