@@ -226,7 +226,12 @@ def main(logger, args):
 
     logger.info("Finished EVALUATING\n")
     # SAVING METRICS
-    functions = {'MEAN': np.mean, 'STD': np.std}
+    functions = {
+        'MEAN': np.mean,
+        'STD': np.std,
+        'MAX': np.amax,
+        'MIN': np.amin
+    }
     writer.ConsoleStatisticsWriter(functions=functions).write(
         evaluator.results)
 
