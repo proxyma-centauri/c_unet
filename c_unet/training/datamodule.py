@@ -116,7 +116,7 @@ class DataModule(pl.LightningDataModule):
             ),
             tio.ZNormalization(),
             tio.CropOrPad(
-                self.get_max_shape(self.subjects + self.test_subjects) + 1,
+                self.get_max_shape(self.subjects + self.test_subjects),
                 mask_name="label",
             ),
             tio.EnsureShapeMultiple(
