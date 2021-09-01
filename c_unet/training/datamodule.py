@@ -114,6 +114,7 @@ class DataModule(pl.LightningDataModule):
                 from_laterality='left',
                 axes='L',
             ),
+            tio.ToCanonical(),
             tio.ZNormalization(),
             tio.CropOrPad(
                 self.get_max_shape(self.subjects + self.test_subjects),
@@ -129,11 +130,12 @@ class DataModule(pl.LightningDataModule):
 
     def get_augmentation_transform(self):
         augment = tio.Compose([
-            tio.RandomAffine(),
-            tio.RandomGamma(p=0.5),
-            tio.RandomNoise(p=0.5),
-            tio.RandomMotion(p=0.1),
-            tio.RandomBiasField(p=0.25),
+            tio.RandomAffine(p=0.1,
+                             scales=0,
+                             degrees=0,
+                             translation=(0.05, 0.01, 0.05)),
+            tio.RandomGamma(p=0.1, log_gamma=0.01),
+            tio.RandomNoise(p=0.1, mean=0, std=(0, 0.01)),
         ])
         return augment
 
@@ -149,7 +151,7 @@ class DataModule(pl.LightningDataModule):
 
         self.preprocess = self.get_preprocessing_transform()
         augment = self.get_augmentation_transform()
-        self.transform = tio.Compose([self.preprocess])  #, augment])
+        self.transform = tio.Compose([self.preprocess, augment])
 
         self.train_set = tio.SubjectsDataset(train_subjects,
                                              transform=self.transform)
