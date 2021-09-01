@@ -1,6 +1,6 @@
 # Roto-translation equivariant CNNs for hippocampus segmentation on 3D MRI
 
-This code contains a Pytorch implementation of discrete 3D roto-translation equivariant convolutions.
+This code contains a Pytorch implementation of discrete 3D roto-translational equivariant convolutions, developed during my master thesis at the [NeuroSpin](https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx) lab of [CEA](https://www.cea.fr/).
 
 # Setup
 
@@ -66,13 +66,98 @@ Please note that each subject's image and segmentation should have the same dime
 
 > :warning: **Size of the images**: The images size should be as low as possible, so avoid passing whole brain images as input. Do not hesitate to use [ROI Loc](https://pypi.org/project/roiloc/) to automatically localize and crop the images and their segmentation around the hippocampus.
 
+> :warning: **Minimal number of images per folder**: Due to a limitation in the implementation of the Datamodule, at least two images and two segmentations should be put in `imagesTr` and `labelsTr` respectively, and at least one image in `imagesTs`, and so irrespectively of the chosen use case (see [Usage](#Usage)). Please note that if you no not intend to train the model, the segmentations can be blank ones.
+
 # Usage
 
-To train the model, evaluate it and plot some slices for each subject, use inside the activated environment:
+There are three different *use cases* possible of the model: **training without prior checkpoints**, **loading from checkpoints and not resuming training**, **loading from checkpoints and resuming training**. The use case can be chosen through the environment variables.
+
+## Training without prior checkpoints
+
+The following variables should be set as:
+
+```sh
+LOAD_FROM_CHECKPOINTS=False
+SHOULD_TRAIN=True
+```
+
+## Loading from checkpoints and not resuming training
+
+The following variables should be set as:
+
+
+```sh
+LOAD_FROM_CHECKPOINTS=True
+CHECKPOINTS_PATH=/path/to/you/checkpoints
+SHOULD_TRAIN=False
+```
+
+## Loading from checkpoints and resuming training
+
+The following variables should be set as:
+
+```sh
+LOAD_FROM_CHECKPOINTS=True
+CHECKPOINTS_PATH=/path/to/you/checkpoints
+SHOULD_TRAIN=True
+```
+
+## Using the model
+
+After setting the variables to the desired use case, to run the model, use inside the activated environment:
 
 ```sh
 python main.py
 ```
+
+# Outputs
+
+## Logs
+- Execution logs can be found in the `.\logs` folder creted during installation.
+- Tensorboard logs can be found in the `.\logs_tf` folder, inside subfolders named with the pattern `LOG_NAME-nb_layers-learning_rate-clip_value`, with `LOG_NAME` specified as a variable.
+
+## Results
+
+The results can be found in the `.\results` folder, inside subfolders named with the pattern `LOG_NAME-nb_layers-learning_rate-clip_value`, with `LOG_NAME` specified as a variable. They are comprised of:
+- For each input image, plots of some slices in coronal and sagital orientation.
+- For each input image, the predicted segmentation, in Nifty1 compressed format.
+- A `metrics_report.csv` csv with the metrics for each input image, for each subfield
+- A `metrics_report_summary.csv` csv with the mean, standard deviation, max and min values of the metrics for each subfield
+
+# Table of environment variables
+| Variable Name | Description | Default |
+| --- | --- | --- |
+| LOAD_FROM_CHECKPOINTS | Boolean to load from checkpoints. | False|
+| CHECKPOINTS_PATH|Path to file with the checkpoints to load| None |
+| SHOULD_TRAIN | Whether training should be performed. | True |
+| CLASSES_NAME | Names of the classes, separated by a comma, like: background, Ca1, Ca2, DG, Ca3, Tail, Sub|
+| PATH_TO_DATA | Path to the folder containing the data.|
+| SUBSET_NAME | Substring of the file names to consider. Leave empty to use all data contained in the data folder.|
+| BATCH_SIZE | Batch size for the datamodule.|
+| NUM_WORKERS | Number of workers of the datamodule.|
+| TEST_HAS_LABELS | Boolean indicating whether or not the test dataset has labels (in `./labelsTs`)| False |
+| SEED|Seed for the train and val split generator| 1 |
+| GROUP|Name of the group. **Remove this field from this file if you want to use a regular CNN model**.| None |
+| GROUP_DIM|Dimension of the group.|
+| OUT_CHANNELS|Number of output channels (classes).|
+| FINAL_ACTIVATION|Type of final activation, can be "softmax" or "sigmoid".| softmax
+| NONLIN|Non linearity, can be "relu", "leaky-relu", or "elu".| leaky-relu |
+| DIVIDER|An integer to divide the number of channels of each layer with, in order to reduce the total number of parameters.|
+| MODEL_DEPTH|Depth of the U-Net.|
+| DROPOUT|Magnitude of the dropout.|
+| LOGS_DIR|Path to the folder where Tensorboard logs should be saved.|
+| LOG_NAME|Prefix of the name this particular run will be known as in Tensorboard and the results folder.|
+| EARLY_STOPPING|Boolean to indicate whether or not to start training early when needed.| False |
+| LEARNING_RATE|Learning rate for the trainer.| 0.001 |
+| HISTOGRAMS|Boolean to store the histograms of gradients of weigths in Tensorboard.| False |
+| GPUS|Identifier or number of the gpu to use| 1 |
+| PRECISION|GPU precision to use (16, 32 or 64)| 32 |
+| MAX_EPOCHS|Number of epochs to train| 30 |
+| LOG_STEPS|Interval of steps to choose to log between.| 5 |
+| GRADIENT_CLIP|Value of the gradient clipping, used to stabilize the network.| 0.5 |
+| CMAP|Color map for the plots.| Oranges |
+
+
 
 # Repository structure
 
@@ -101,11 +186,10 @@ python main.py
     │   ├── convs.py
     │   └── gconvs.py
     ├── training # Pytorch lightning models and structures definition
-    │   ├── CrossEntropyLosses.py
     │   ├── datamodule.py
+    │   ├── HomogeniseLaterality.py
     │   ├── __init__.py
     │   ├── lightningUnet.py
-    │   ├── GDiceLossV2.py
     │   └── tverskyLosses.py
     └── utils
         ├── concatenation # Custom concatenation layers

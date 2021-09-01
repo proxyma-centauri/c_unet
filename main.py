@@ -290,7 +290,7 @@ if __name__ == "__main__":
     args["HISTOGRAMS"] = config("HISTOGRAMS", default=False, cast=bool)
 
     args["GPUS"] = [config("GPUS", default=1, cast=int)]
-    args["PRECISION"] = config("PRECISION", default=16, cast=int)
+    args["PRECISION"] = config("PRECISION", default=32, cast=int)
 
     args["MAX_EPOCHS"] = config("MAX_EPOCHS", default=30, cast=int)
     args["LOG_STEPS"] = config("LOG_STEPS", default=5, cast=int)
