@@ -2,6 +2,16 @@
 
 This code contains a Pytorch implementation of discrete 3D roto-translational equivariant convolutions, developed during my master thesis at the [NeuroSpin](https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx) lab of [CEA](https://www.cea.fr/).
 
+## Table of Contents
+
+- [Setup](#setup)
+- [Usage](#usage)
+- [Outputs](#outputs)
+- [Table of environment variables](#table-of-environment-variables)
+- [Repository structure](#repository-structure)
+- [References](#references)
+- [License](#license)
+
 # Setup
 
 ## Requirements
