@@ -1,9 +1,21 @@
+# Copyright Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li
+
+# This file was taken from the SwitchNorm repository at
+# https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py
+# by Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li,
+# and is covered by the CC-BY-NC 4.0 LICENSE (https://creativecommons.org/licenses/by-nc/4.0/).
+
 import torch
 import torch.nn as nn
 
 
 class SwitchNorm3d(nn.Module):
-    def __init__(self, num_features, eps=1e-5, momentum=0.997, using_moving_average=True, using_bn=True,
+    def __init__(self,
+                 num_features,
+                 eps=1e-5,
+                 momentum=0.997,
+                 using_moving_average=True,
+                 using_bn=True,
                  last_gamma=False):
         super(SwitchNorm3d, self).__init__()
         self.eps = eps
@@ -20,8 +32,10 @@ class SwitchNorm3d(nn.Module):
             self.mean_weight = nn.Parameter(torch.ones(2))
             self.var_weight = nn.Parameter(torch.ones(2))
         if self.using_bn:
-            self.register_buffer('running_mean', torch.zeros(1, num_features, 1))
-            self.register_buffer('running_var', torch.zeros(1, num_features, 1))
+            self.register_buffer('running_mean',
+                                 torch.zeros(1, num_features, 1))
+            self.register_buffer('running_var',
+                                 torch.zeros(1, num_features, 1))
 
         self.reset_parameters()
 
@@ -37,8 +51,8 @@ class SwitchNorm3d(nn.Module):
 
     def _check_input_dim(self, input):
         if input.dim() != 5:
-            raise ValueError('expected 5D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError('expected 5D input (got {}D input)'.format(
+                input.dim()))
 
     def forward(self, x):
         self._check_input_dim(x)
@@ -48,13 +62,13 @@ class SwitchNorm3d(nn.Module):
         var_in = x.var(-1, keepdim=True)
 
         mean_ln = mean_in.mean(1, keepdim=True)
-        temp = var_in + mean_in ** 2
-        var_ln = temp.mean(1, keepdim=True) - mean_ln ** 2
+        temp = var_in + mean_in**2
+        var_ln = temp.mean(1, keepdim=True) - mean_ln**2
 
         if self.using_bn:
             if self.training:
                 mean_bn = mean_in.mean(0, keepdim=True)
-                var_bn = temp.mean(0, keepdim=True) - mean_bn ** 2
+                var_bn = temp.mean(0, keepdim=True) - mean_bn**2
                 if self.using_moving_average:
                     self.running_mean.mul_(self.momentum)
                     self.running_mean.add_((1 - self.momentum) * mean_bn.data)
@@ -62,7 +76,7 @@ class SwitchNorm3d(nn.Module):
                     self.running_var.add_((1 - self.momentum) * var_bn.data)
                 else:
                     self.running_mean.add_(mean_bn.data)
-                    self.running_var.add_(mean_bn.data ** 2 + var_bn.data)
+                    self.running_var.add_(mean_bn.data**2 + var_bn.data)
             else:
                 mean_bn = torch.autograd.Variable(self.running_mean)
                 var_bn = torch.autograd.Variable(self.running_var)
@@ -72,8 +86,10 @@ class SwitchNorm3d(nn.Module):
         var_weight = softmax(self.var_weight)
 
         if self.using_bn:
-            mean = mean_weight[0] * mean_in + mean_weight[1] * mean_ln + mean_weight[2] * mean_bn
-            var = var_weight[0] * var_in + var_weight[1] * var_ln + var_weight[2] * var_bn
+            mean = mean_weight[0] * mean_in + mean_weight[
+                1] * mean_ln + mean_weight[2] * mean_bn
+            var = var_weight[0] * var_in + var_weight[1] * var_ln + var_weight[
+                2] * var_bn
         else:
             mean = mean_weight[0] * mean_in + mean_weight[1] * mean_ln
             var = var_weight[0] * var_in + var_weight[1] * var_ln
