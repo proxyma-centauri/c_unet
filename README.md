@@ -282,4 +282,5 @@ url = {https://www.sciencedirect.com/science/article/pii/S1361841521000815}
 
 # License
 
-**TODO**
+This repository is covered by the MIT license, but some exceptions apply, and are listed below:
+- The file in `./c_unet/utils/normalization/SwitchNorm3d` was taken from the [SwitchNorm repository](https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py) by Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li, and is covered by the [CC-BY-NC 4.0 LICENSE](https://creativecommons.org/licenses/by-nc/4.0/), as mentionned also at the top of the file.
