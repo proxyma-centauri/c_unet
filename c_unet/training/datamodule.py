@@ -48,11 +48,26 @@ class DataModule(pl.LightningDataModule):
         self.test_set = None
 
     def get_max_shape(self, subjects):
+        """
+        Get the maximum shape in every direction over the given list of subjects
+
+        Args:
+            subjects: list of tio.Subject
+        Returns:
+            Tuple with the maximum shape in each dimension
+        """
         dataset = tio.SubjectsDataset(subjects)
         shapes = np.array([s.get_first_image().spatial_shape for s in dataset])
         return shapes.max(axis=0)
 
     def download_data(self):
+        """
+        Get the paths to all images
+
+        Returns:
+            Four lists with the training (and validation) images and labels paths, and test
+            images and labels paths respectively
+        """
         def get_niis(d):
             file_name = f'*.nii*'
             if self.subset_name:
@@ -71,6 +86,10 @@ class DataModule(pl.LightningDataModule):
         return image_training_paths, label_training_paths, image_test_paths, label_test_paths
 
     def prepare_data(self):
+        """
+        Creates Subject instances with the image, label and laterality for training
+        and validation subjects, and for test subjects
+        """
         image_training_paths, label_training_paths, image_test_paths, label_test_paths = self.download_data(
         )
         self.subjects = []
@@ -109,6 +128,15 @@ class DataModule(pl.LightningDataModule):
                 self.test_subjects.append(subject)
 
     def get_preprocessing_transform(self):
+        """
+        Gets the composition of preprocessing transforms, which are applied on all subjects.
+        They ensure a unique 'multiple of eight' shape for all of them, normalize the intensity
+        values, and the laterality (left hippocampi are reversed to face right-ward), as well
+        as the orientation. Labels are one-hot encoded.
+
+        Returns:
+            Composition of transformations
+        """
         preprocess = tio.Compose([
             HomogeniseLaterality(
                 from_laterality='left',
@@ -129,6 +157,13 @@ class DataModule(pl.LightningDataModule):
         return preprocess
 
     def get_augmentation_transform(self):
+        """
+        Gets the composition of augmentation transforms, which are applied on some training subjects
+        randomly.
+
+        Returns:
+            Composition of transformations
+        """
         augment = tio.Compose([
             tio.RandomAffine(p=0.1,
                              scales=0,
@@ -140,6 +175,10 @@ class DataModule(pl.LightningDataModule):
         return augment
 
     def setup(self, stage=None):
+        """
+        Setups the data in three SubjectsDatasets (training, validation and test).
+        The training data is split randomly between training and validation.
+        """
         num_subjects = len(self.subjects)
         num_train_subjects = int(round(num_subjects * self.train_val_ratio))
         num_val_subjects = num_subjects - num_train_subjects

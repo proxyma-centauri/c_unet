@@ -127,6 +127,12 @@ class Unet(nn.Module):
                                     group_dim=group_dim)
 
     def forward(self, x):
+        """
+        Args:
+            - x: input feature map
+        Returns:
+            - output feature map, the segmentation of the input image
+        """
         x, downsampling_features = self.encoder(x)
         x = self.decoder(x, downsampling_features)
         self.logger.debug(f"Final output shape: {x.shape}")

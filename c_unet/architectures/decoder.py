@@ -143,9 +143,11 @@ class DecoderBlock(nn.Module):
 
     def forward(self, x, down_sampling_features):
         """
-        :param x: inputs
-        :param down_sampling_features: feature maps from encoder path
-        :return: output
+        Args:
+            - x: input feature map
+            - down_sampling_features: feature maps from encoder path
+        Returns:
+            - output feature map, the segmentation of the input image
         """
         for key, layer in self.module_dict.items():
             if key.startswith("upsample"):

@@ -5,8 +5,11 @@ from torch import nn
 class GPool3d(nn.Module):
     """Pool over channels using einops.
     
-    pool_over: `c`, `g`, `cg` or `hwd`
-    reduction: `max` or `mean`
+    Args:
+        - pool_over (str): Which dimension to pool over: `c` (channels), `g` (group),
+            `cg` (both channels and group dimension) or `hwd` (height, width and depth together)
+        - reduction (int): Mode of reduction, can be either `max` or `mean`
+        - reduction_factor (int): By how much should the pooling reduce the size of the input
     """
     def __init__(self,
                  pool_over: str = "c",

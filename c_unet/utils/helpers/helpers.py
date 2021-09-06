@@ -7,6 +7,16 @@ def calc_same_padding(input_,
                       stride=1,
                       dilation=1,
                       transposed=False) -> int:
+    """
+    Helper function to calculate the padding to add to conserve shaped after convolutions
+
+    Args:
+        - input_ (torch tensor): input tensor
+        - kernel (int): kernel of the convolution
+        - stride (int): stride of the convolution
+        - dilation (int): dilation of the convolution
+        - transposed (bool): Whether or not the convolution is a transposed one
+    """
     if transposed:
         return (dilation * (kernel - 1) + 1) // 2 - 1, input_ // (1. / stride)
     else:
@@ -19,6 +29,18 @@ def calc_upsampling_size(input_size: int,
                          tconv_stride: int = 2,
                          tconv_padding: int = 1,
                          output_padding: int = 1) -> int:
+    """
+    Helper function to calculate the upsampling size desired from the convolution parameters.
+    This is the same formula as used by the transposed 3D convolution of PyTorch
+
+    Args:
+        - input_size (int): size of the input tensor
+        - dilation (int): dilation of the convolution
+        - tconv_kernel_size (int): kernel of the convolution
+        - tconv_stride (int): stride of the convolution
+        - tconv_padding (int): padding of the convolution
+        - output_padding (int): Output padding to add
+    """
     return (input_size - 1) * tconv_stride - 2 * tconv_padding + dilation * (
         tconv_kernel_size - 1) + output_padding + 1
 
