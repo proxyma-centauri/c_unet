@@ -131,6 +131,13 @@ class EncoderBlock(nn.Module):
                         padding=pool_padding)
 
     def forward(self, x):
+        """
+        Args:
+            - x: input feature map
+        Returns:
+            - (output feature map, down_sampling_features): tuple with the last feature map
+                of the encoder path and the feature maps from the encoder path
+        """
         down_sampling_features = []
         for key, layer in self.module_dict.items():
             if key.startswith("conv"):

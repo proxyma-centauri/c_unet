@@ -14,6 +14,15 @@ class T4_group(object):
         self.cayleytable = self.get_cayleytable()
 
     def get_rot_mat(self, theta, device):
+        """
+        Construct the rotation matrix associated with the given angle theta
+
+        Args:
+            theta: rotation angle (rad)
+            device: device the tensor should be created on
+        Returns:
+            4 by 4 torch tensor
+        """
         theta = torch.tensor(theta)
         rot_mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
                                 [torch.sin(theta),
@@ -21,6 +30,16 @@ class T4_group(object):
         return rot_mat
 
     def rot_img(self, x, theta):
+        """
+        Rotates the image by an angle of theta radians.
+        This is autograd compatible.
+
+        Args:
+            x : 3D image to rotate
+            theta: rotation angle (rad)
+        Returns:
+            Rotated image
+        """
         rot_mat = self.get_rot_mat(theta,
                                    x.device)[None,
                                              ...].repeat(x.shape[0], 1, 1)
@@ -93,19 +112,6 @@ class T4_group(object):
             w = w.view([-1] + list(Wsh[2:]))
             U.append(w)
         return U
-
-        # Wsh = W.shape
-        # cayley = self.cayleytable
-        # U = []
-        # for i in range(12):
-        #     perm_mat = self.get_permutation_matrix(cayley, i).to(W.device)
-        #     w = W[:, :, :, :, :, :, i]
-        #     w = w.permute([0, 1, 2, 3, 5, 4])
-        #     w = w.reshape([-1, 12])
-        #     w = torch.matmul(w, perm_mat)
-        #     w = w.view(list(Wsh[:4]) + [-1, 12])
-        #     U.append(w.permute([0, 1, 2, 3, 5, 4]))
-        # return U
 
     def get_permutation_matrix(self, perm, dim):
         """Creates and return the permutation matrix

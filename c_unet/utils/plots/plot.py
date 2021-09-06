@@ -1,15 +1,25 @@
+from typing import List
 import torchio as tio
 import matplotlib.pyplot as plt
+from typing import List
 
 
 def plot_middle_slice(subject,
-                      nb_of_classes,
-                      cmap,
-                      save_name,
-                      classes_names=None,
-                      with_labels=True):
+                      nb_of_classes: int,
+                      cmap: str,
+                      save_name: str,
+                      classes_names: List[str] = None,
+                      with_labels: bool = True):
     """
-    Plots some slices of the image, labels and predictions
+    Plots some slices of the image, labels and predictions, in coronal and sagital orientation.
+
+    Args:
+        - subject (torchio.Subject): Subject whose slices to plot
+        - nb_of_classes (int): number of classes in the segmentation
+        - cmap (str): Color map to use in plots
+        - save_name (str): name of the file to save the plots to
+        - classes_names (list): names of the classes of the segmentation
+        - with_labels (bool): whether or not the subject has a field "label"
     """
     nb_rows = 2 + nb_of_classes
 
