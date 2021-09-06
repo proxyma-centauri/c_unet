@@ -191,6 +191,8 @@ def main(logger, args):
             filename = subject[field]['filename']
             folder_name = 'labelsTs' if type_predictions == "test" else "labelsTr"
             subject_id = f"{type_predictions}-{filename}"
+            path = f"results/{log_name}/{filename}"
+            Path(path).mkdir(parents=True, exist_ok=True)
 
             # SAVING THE SEGMENTATION
 
@@ -206,7 +208,7 @@ def main(logger, args):
             saved_prediction = nib.Nifti1Image(prediction_to_save.numpy(),
                                                affine=affine,
                                                header=header)
-            nib.save(saved_prediction, f"results/{log_name}/{subject_id}")
+            nib.save(saved_prediction, f"{path}/{subject_id}")
 
             # EVALUATION
             if should_evaluate_and_plot_normaly:
@@ -220,7 +222,7 @@ def main(logger, args):
             plot_middle_slice(subject,
                               nb_of_classes=len(args.get("CLASSES_NAME")),
                               cmap=args.get("CMAP"),
-                              save_name=f"results/{log_name}/{subject_id}",
+                              save_name=f"{path}/{subject_id}",
                               classes_names=args.get("CLASSES_NAME"),
                               with_labels=should_evaluate_and_plot_normaly)
 
