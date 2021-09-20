@@ -12,6 +12,7 @@ import pymia.evaluation.writer as writer
 from pytorch_lightning import loggers as pl_loggers
 from pathlib import Path
 from decouple import config
+from codecarbon import track_emissions
 
 from c_unet.training.datamodule import DataModule
 from c_unet.architectures.unet import Unet
@@ -21,6 +22,7 @@ from c_unet.utils.plots.plot import plot_middle_slice
 from c_unet.utils.logging.logging import configure_and_return_logger
 
 
+@track_emissions(offline=True, country_iso_code="FRA")
 def main(logger, args):
     # CONFIG
     logger.info(f"CONFIGURATION \n\n {args}")
