@@ -1,7 +1,7 @@
 # Copyright Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li
 
 # This file was taken from the SwitchNorm repository at
-# https://github.com/switchablenorms/Switchable-Normalization/blob/master/devkit/ops/switchable_norm.py
+# https://github.com/switchablenorms/Switchable-Normalization/blob/5472286952ba5519a7d3229d9ad899a5c1b2e5b1/devkit/ops/switchable_norm.py
 # by Ping Luo and Jiamin Ren and Zhanglin Peng and Ruimao Zhang and Jingyu Li,
 # and is covered by the CC-BY-NC 4.0 LICENSE (https://creativecommons.org/licenses/by-nc/4.0/).
 
