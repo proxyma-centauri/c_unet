@@ -1,6 +1,6 @@
 # Roto-translation equivariant CNNs for hippocampus segmentation on 3D MRI
 
-This code contains a Pytorch implementation of discrete 3D roto-translational equivariant convolutions, developed during my master thesis at the [NeuroSpin](https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx) lab of [CEA](https://www.cea.fr/).
+This code contains a Pytorch implementation of discrete 3D roto-translational equivariant convolutions, developed during my master thesis in the [InDev](https://joliot.cea.fr/drf/joliot/en/Pages/research_entities/NeuroSpin/uniact/neuropediatrics.aspx) team, which is part of the [NeuroSpin](https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx) lab of [CEA](https://www.cea.fr/), and of Inserm 's [U1141 NeuroDiderot](https://www.neurodiderot.com/).
 
 ## Table of Contents
 
