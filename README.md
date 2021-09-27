@@ -18,7 +18,8 @@ This code contains a Pytorch implementation of discrete 3D roto-translational eq
 
 The following packages are prerequisites:
 - Python 3
-- [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html)
+
+Though not a prerequisite, [Anaconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) is recommended as a virual environnement and packages manager. The following instructions and commands will assume the use of Anaconda.
 
 ## Setting up the environment
 
